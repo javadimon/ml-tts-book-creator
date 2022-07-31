@@ -26,7 +26,7 @@ public class Converter {
         log.info("Request: {}", convertRequest.getRequest());
 
         Flux<DataBuffer> dataBuffer = webClientWithTimeout.post()
-                .header("Authorization", "Bearer t1.9euelZrNzYnGzcielp6VicyRnciez-3rnpWazcuYjpzJnpyXlJiYkM_Mkp7l9PdtWWVo-e8PQSeS3fT3LQhjaPnvD0Enkg.EIp9Pp213-lDREtNfN0ieJP98mFnALbawxeyuXeTmACqF6zWdIkMnU3mga_ZLOrdEQIYavLrf1r0P7T1ttt7BQ")
+                .header("Authorization", "Bearer " + System.getenv("CONVERTER_TOKEN"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .bodyValue(convertRequest.getRequest())
                 .retrieve()
