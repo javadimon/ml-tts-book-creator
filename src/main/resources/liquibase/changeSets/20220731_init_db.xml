@@ -10,8 +10,9 @@
 
             CREATE TABLE IF NOT EXISTS handled_data.book(
               id UUID NOT NULL CONSTRAINT book_pkey PRIMARY KEY,
-              name VARCHAR(255) NOT NULL,
-              source_path VARCHAR(255) NOT NULL
+              name VARCHAR(255) UNIQUE NOT NULL,
+              author VARCHAR(255) NOT NULL,
+              file_name VARCHAR(255) UNIQUE NOT NULL
             );
 
         </sql>

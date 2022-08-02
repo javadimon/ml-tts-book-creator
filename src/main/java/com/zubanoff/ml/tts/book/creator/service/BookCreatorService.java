@@ -1,5 +1,8 @@
 package com.zubanoff.ml.tts.book.creator.service;
 
+import com.zubanoff.ml.tts.book.creator.dao.BookRepository;
+import com.zubanoff.ml.tts.book.creator.model.BookEntity;
+import com.zubanoff.ml.tts.book.creator.server.dto.BookCreateRequestDto;
 import com.zubanoff.ml.tts.book.creator.service.converter.Converter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -9,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -17,24 +21,32 @@ import java.util.TreeMap;
 @RequiredArgsConstructor
 @Service
 @Slf4j
-public class BookCreator {
+public class BookCreatorService {
 
     private final Converter converter;
+    private final BookRepository bookRepository;
     private static final String CHAPTER_SPLITTER = "глава";
     private static final String EMPTY_LINE = "\n";
     private static final int MAX_CHUNK_LENGTH = 5000;
+    private static final int CONVERT_REQUEST_DELAY_MS = 50;
 
-    public void createBook(Path bookPath) {
+    @SneakyThrows
+    public void createBook(BookCreateRequestDto bookCreateRequestDto) {
+        BookEntity bookEntity = bookRepository.findById(bookCreateRequestDto.getBookId()).orElseThrow();
+        Path bookPath = Paths.get(System.getProperty("user.dir"), "books", "source", "txt", bookEntity.getFileName());
         TreeMap<Integer, List<String>> chapters = splitBookToChapters(bookPath);
-        splitChaptersToChunks(chapters);
+        List<TreeMap<String, String>> chunks = splitChaptersToChunks(chapters);
+        for(TreeMap<String, String> chunk : chunks){
+            for(Map.Entry<String, String> entry : chunk.entrySet()){
+                if(entry.getKey().startsWith("Chapter 001")){
+                    log.info("Try convert chapter {}, length {}", entry.getKey(), entry.getValue().length());
+//                    converter.convert(entry.getKey(), entry.getValue());
+                    Thread.sleep(CONVERT_REQUEST_DELAY_MS);
+                }
+            }
+        }
 
-        // TODO SEND CHUNKS TO CONVERTER
         // TODO MERGE MP3 CHUNKS TO MP3 CHAPTERS
-//        log.info("Try book create");
-//        converter.convert("Если подъезжать к Ланну с юга, то с холмов его видно из далека. А слышно еще дальше. " +
-//                "Колокола Ланна известны на весь мир, что чтит Истинного Бога и Мать Церковь. " +
-//                "Издали город кажется огромным и прекрасным. Чистым и белым.");
-//        log.info("Book created");
     }
 
     public List<TreeMap<String, String>> splitChaptersToChunks(TreeMap<Integer, List<String>> chapters) {
@@ -58,15 +70,27 @@ public class BookCreator {
                     }
 
                 } else {
-                    map.put("Chapter " + chapterNumber + "-" + chapterSubNumber, chapterChunkText.toString());
+                    map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), chapterChunkText.toString());
                     chapterChunkText = new StringBuilder();
                     chapterSubNumber++;
                 }
+            }
+
+            if(chapterChunkText.length() > 0) {
+                map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), chapterChunkText.toString());
             }
             chunks.add(map);
         }
 
         return chunks;
+    }
+
+    private String formatChapterNumber(int chapterNumber) {
+        if(chapterNumber < 100) {
+            return chapterNumber < 10 ? "00" + chapterNumber : "0" + String.valueOf(chapterNumber);
+        } else {
+            return String.valueOf(chapterNumber);
+        }
     }
 
     @SneakyThrows

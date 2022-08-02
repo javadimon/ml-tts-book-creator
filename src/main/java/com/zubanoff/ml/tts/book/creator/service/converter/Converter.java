@@ -20,10 +20,9 @@ public class Converter {
 
     private final WebClient webClientWithTimeout;
 
-    public void convert(String text) {
+    public void convert(String chunkName, String text) {
         ConverterRequest convertRequest = new ConverterRequest();
         convertRequest.setText(text);
-        log.info("Request: {}", convertRequest.getRequest());
 
         Flux<DataBuffer> dataBuffer = webClientWithTimeout.post()
                 .header("Authorization", "Bearer " + System.getenv("CONVERTER_TOKEN"))
@@ -32,7 +31,8 @@ public class Converter {
                 .retrieve()
                 .bodyToFlux(DataBuffer.class);
 
-        Path destination = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", "test.mp3");
+        Path destination = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", chunkName + "." + convertRequest.getFormat());
         DataBufferUtils.write(dataBuffer, destination, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING).share().block();
+        log.info("File {} created", chunkName + "." + convertRequest.getFormat());
     }
 }
