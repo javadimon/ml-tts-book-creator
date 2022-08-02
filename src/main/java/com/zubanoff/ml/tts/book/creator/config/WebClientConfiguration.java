@@ -4,6 +4,7 @@ import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Scope;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -19,7 +20,8 @@ public class WebClientConfiguration {
     public static final int READ_TIMEOUT = 300000;
     public static final int WRITE_TIMEOUT = 10000;
 
-    @Bean
+    @Bean(name = "webClientWithTimeout")
+    @Scope("prototype")
     public WebClient webClientWithTimeout() {
         HttpClient httpClient = HttpClient.create()
                 .doOnConnected(connection -> {

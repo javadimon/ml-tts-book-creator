@@ -2,6 +2,7 @@ package com.zubanoff.ml.tts.book.creator.service.converter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationContext;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.stereotype.Component;
@@ -18,9 +19,10 @@ import java.nio.file.StandardOpenOption;
 @Slf4j
 public class Converter {
 
-    private final WebClient webClientWithTimeout;
+    private final ApplicationContext applicationContext;
 
     public void convert(String chunkName, String text) {
+        WebClient webClientWithTimeout = (WebClient) applicationContext.getBean("webClientWithTimeout");
         ConverterRequest convertRequest = new ConverterRequest();
         convertRequest.setText(text);
 
