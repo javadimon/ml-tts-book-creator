@@ -40,7 +40,7 @@ public class BookCreatorService {
             for(Map.Entry<String, String> entry : chunk.entrySet()){
                 if(entry.getKey().startsWith("Chapter 001")){
                     log.info("Try convert chapter {}, length {}", entry.getKey(), entry.getValue().length());
-//                    converter.convert(entry.getKey(), entry.getValue());
+                    converter.convert(entry.getKey(), entry.getValue());
                     Thread.sleep(CONVERT_REQUEST_DELAY_MS);
                 }
             }
