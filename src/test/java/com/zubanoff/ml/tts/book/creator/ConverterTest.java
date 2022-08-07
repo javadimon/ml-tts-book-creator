@@ -34,13 +34,14 @@ public class ConverterTest {
     @Test
     @SneakyThrows
     public void convertTest(){
-        String text = """
-                Если подъезжать к Ланну с юга, то с холмов его видно из далека. А слышно еще дальше. Колокола Ланна известны на весь мир, что чтит Истинного Бога и Мать Церковь. Издали город кажется огромным и прекрасным. Чистым и белым.""";
-//        converter.convert(text);
-
-        Thread.sleep(10000);
+//        String text = """
+//                Если подъезжать к Ланну с юга, то с холмов его видно из далека. А слышно еще дальше. Колокола Ланна известны на весь мир, что чтит Истинного Бога и Мать Церковь. Издали город кажется огромным и прекрасным. Чистым и белым.""";
+////        converter.convert(text);
+//
+//        Thread.sleep(10000);
     }
 
+    @Disabled
     @Test
     public void splitBookToChaptersTest(){
         assertThat(bookCreatorService, notNullValue());
