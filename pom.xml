@@ -14,7 +14,7 @@
 	<name>tts.book.creator</name>
 	<description>ML Yandex Speech TTS audio book creator</description>
 	<properties>
-		<java.version>11</java.version>
+		<java.version>17</java.version>
 		<vaadin.version>23.1.2</vaadin.version>
 	</properties>
 	<dependencies>
