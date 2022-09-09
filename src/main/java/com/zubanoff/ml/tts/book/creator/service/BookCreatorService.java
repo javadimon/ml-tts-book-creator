@@ -10,14 +10,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
-import java.util.concurrent.Executors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 @RequiredArgsConstructor
 @Service
@@ -30,6 +35,7 @@ public class BookCreatorService {
     private static final String EMPTY_LINE = "\n";
     private static final int MAX_CHUNK_LENGTH = 5000;
     private static final int CONVERT_REQUEST_DELAY_MS = 50;
+    private static final double COST_PER_SYMBOL = 0.00132;
 
     @SneakyThrows
     public void createBook(BookCreateRequestDto bookCreateRequestDto) {
@@ -37,21 +43,57 @@ public class BookCreatorService {
         Path bookPath = Paths.get(System.getProperty("user.dir"), "books", "source", "txt", bookEntity.getFileName());
         TreeMap<Integer, List<String>> chapters = splitBookToChapters(bookPath);
         List<TreeMap<String, String>> chunks = splitChaptersToChunks(chapters);
+        int totalSymbolsCount = 0;
         for(TreeMap<String, String> chunk : chunks){
             for(Map.Entry<String, String> entry : chunk.entrySet()){
-                if(entry.getKey().startsWith("Chapter 018")){
-                    log.info("Try convert chapter {}, length {}", entry.getKey(), entry.getValue().length());
-                    Runnable runnable = () -> {
-                        converter.convert(entry.getKey(), entry.getValue());
-                    };
-                    Executors.newSingleThreadExecutor().execute(runnable);
+                log.info("Key {}, Value length {}", entry.getKey(), entry.getValue().length());
+                totalSymbolsCount = totalSymbolsCount + entry.getValue().length();
 
-                    Thread.sleep(CONVERT_REQUEST_DELAY_MS);
+                if(isChapterToConvert(bookCreateRequestDto, entry.getKey())){
+                    converter.convert(entry.getKey(), entry.getValue());
                 }
             }
         }
+        log.info("Total symbols count {}, Price {}", totalSymbolsCount, totalSymbolsCount * COST_PER_SYMBOL);
 
-        // TODO MERGE MP3 CHUNKS TO MP3 CHAPTERS
+        makeZipFile(bookEntity);
+    }
+
+    private boolean isChapterToConvert(BookCreateRequestDto bookCreateRequestDto, String chapterName){
+        for(int chapterNumber = bookCreateRequestDto.getFromChapter(); chapterNumber < bookCreateRequestDto.getToChapter(); chapterNumber++){
+            String sChapterNumber = "Chapter " + formatChapterNumber(chapterNumber);
+            if(chapterName.startsWith(sChapterNumber)){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @SneakyThrows
+    private void makeZipFile(BookEntity bookEntity){
+        Path srcFilesPath = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3");
+        File[] srcFiles = srcFilesPath.toFile().listFiles();
+
+        Path zipPath = Paths.get(System.getProperty("user.dir"), "books", "out", "zip", bookEntity.getName() + ".zip");
+        FileOutputStream fos = new FileOutputStream(zipPath.toFile());
+        ZipOutputStream zipOut = new ZipOutputStream(fos);
+        for (File srcFile : Objects.requireNonNull(srcFiles)) {
+            FileInputStream fis = new FileInputStream(srcFile);
+            ZipEntry zipEntry = new ZipEntry(srcFile.getName());
+            zipOut.putNextEntry(zipEntry);
+
+            byte[] bytes = new byte[1024];
+            int length;
+            while((length = fis.read(bytes)) >= 0) {
+                zipOut.write(bytes, 0, length);
+            }
+            fis.close();
+        }
+        zipOut.close();
+        fos.close();
+
+        log.info("ZIP file created!");
     }
 
     public List<TreeMap<String, String>> splitChaptersToChunks(TreeMap<Integer, List<String>> chapters) {

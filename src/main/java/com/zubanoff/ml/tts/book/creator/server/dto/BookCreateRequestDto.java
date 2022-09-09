@@ -10,4 +10,6 @@ import java.util.UUID;
 @Setter
 public class BookCreateRequestDto {
     private UUID bookId;
+    private int fromChapter;
+    private int toChapter;
 }
