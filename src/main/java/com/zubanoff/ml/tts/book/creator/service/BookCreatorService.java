@@ -46,10 +46,10 @@ public class BookCreatorService {
         int totalSymbolsCount = 0;
         for(TreeMap<String, String> chunk : chunks){
             for(Map.Entry<String, String> entry : chunk.entrySet()){
-                log.info("Key {}, Value length {}", entry.getKey(), entry.getValue().length());
                 totalSymbolsCount = totalSymbolsCount + entry.getValue().length();
 
                 if(isChapterToConvert(bookCreateRequestDto, entry.getKey())){
+                    log.info("Key {}, Value length {}", entry.getKey(), entry.getValue().length());
                     converter.convert(entry.getKey(), entry.getValue());
                 }
             }
