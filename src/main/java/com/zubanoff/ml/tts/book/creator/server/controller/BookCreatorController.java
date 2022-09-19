@@ -3,6 +3,8 @@ package com.zubanoff.ml.tts.book.creator.server.controller;
 import com.zubanoff.ml.tts.book.creator.server.dto.BookCreateRequestDto;
 import com.zubanoff.ml.tts.book.creator.service.BookCreatorService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,5 +22,11 @@ public class BookCreatorController {
     @ResponseBody
     public void createBook(@RequestBody BookCreateRequestDto bookCreateRequestDto) {
         bookCreatorService.createBook(bookCreateRequestDto);
+    }
+
+    @GetMapping("/chapters/{bookId}")
+    @ResponseBody
+    public String getBookChapters(@PathVariable String bookId) {
+        return bookCreatorService.getBookChapters(bookId);
     }
 }

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -171,5 +172,12 @@ public class BookCreatorService {
         }
 
         return chapters;
+    }
+
+    public String getBookChapters(String bookId){
+        BookEntity bookEntity = bookRepository.findById(UUID.fromString(bookId)).orElseThrow();
+        Path bookPath = Paths.get(System.getProperty("user.dir"), "books", "source", "txt", bookEntity.getFileName());
+        TreeMap<Integer, List<String>> chapters = splitBookToChapters(bookPath);
+        return chapters.lastKey().toString();
     }
 }

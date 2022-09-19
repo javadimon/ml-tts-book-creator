@@ -16,3 +16,6 @@ spring:
 
   liquibase:
     change-log: classpath:liquibase/db-changelog.xml
+
+vaadin:
+  urlMapping: /app/*
