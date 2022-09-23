@@ -5,23 +5,23 @@ import com.speechpro.cloud.client.api.SessionApi;
 import com.speechpro.cloud.client.model.SessionDto;
 import com.speechpro.cloud.client.model.StartSessionRequest;
 import com.speechpro.cloud.client.model.StatusDto;
-import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 
+import javax.annotation.PostConstruct;
 import java.util.Objects;
 import java.util.UUID;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class STCConverter {
 
     private SessionApi sessionApi;
     private UUID currentSessionId;
 
+    @PostConstruct
     public void init(){
         ApiClient apiClient = new ApiClient();
         sessionApi = new SessionApi(apiClient);

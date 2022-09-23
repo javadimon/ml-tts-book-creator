@@ -28,7 +28,7 @@ import java.util.Properties;
 public class DBConfig {
     @Primary
     @Bean(name = "jpaProperties")
-    @ConfigurationProperties(prefix = "jpa")
+    @ConfigurationProperties(prefix = "spring.jpa")
     public Properties getJpaProperties(){
         return new Properties();
     }
