@@ -25,7 +25,7 @@ import java.util.Properties;
         transactionManagerRef = "transactionManager"
 )
 @EnableTransactionManagement
-public class DBConfig {
+public class DataBaseConfig {
     @Primary
     @Bean(name = "jpaProperties")
     @ConfigurationProperties(prefix = "spring.jpa")

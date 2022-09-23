@@ -26,6 +26,13 @@ public class STCConverterTest {
 
         stcConverter.createSession();
         stcConverter.checkSession();
+        stcConverter.getLanguages();
+        stcConverter.getVoices();
+
+        stcConverter.convert("", "");
+        Thread.sleep(30000);
+
+        stcConverter.closeWebSocket();
         stcConverter.closeSession();
     }
 }
