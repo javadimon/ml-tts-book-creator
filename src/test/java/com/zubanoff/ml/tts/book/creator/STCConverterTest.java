@@ -30,9 +30,8 @@ public class STCConverterTest {
         stcConverter.getVoices();
 
         stcConverter.convert("", "");
-        Thread.sleep(30000);
+//        Thread.sleep(30000);
 
-        stcConverter.closeWebSocket();
         stcConverter.closeSession();
     }
 }

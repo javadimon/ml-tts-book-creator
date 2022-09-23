@@ -26,6 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Component
 @Slf4j
@@ -33,6 +35,7 @@ public class STCConverter {
 
     private SessionApi sessionApi;
     private UUID currentSessionId;
+    private ApiResponse<WebSocketServerConfiguration> webSocketConfiguration;
 
     @PostConstruct
     public void init() {
@@ -80,17 +83,26 @@ public class STCConverter {
 
     @SneakyThrows
     public void convert(String chunkName, String text) {
-        // for Websocket connection nv-websocket-client is used here
+        UUID transactionId = UUID.randomUUID();
         SynthesizeApi synthesizeApi = new SynthesizeApi();
         WebSocketSynthesizeRequest webSocketRequest =
                 new WebSocketSynthesizeRequest(new WebSocketTextParam("text/plain"), "Vladimir_n", "audio/wav");
-        ApiResponse<WebSocketServerConfiguration> webSocketConfiguration = synthesizeApi.webSocketStreamWithHttpInfo(currentSessionId, webSocketRequest);
+        webSocketConfiguration = synthesizeApi.webSocketStreamWithHttpInfo(currentSessionId, webSocketRequest);
+        webSocketConfiguration.getHeaders().put("X-Transaction-Id", List.of(transactionId.toString()));
+
+        AtomicBoolean isConnect = new AtomicBoolean(false);
+        AtomicBoolean isWait = new AtomicBoolean(true);
+        AtomicReference<Long> currentTime = new AtomicReference<>();
+        currentTime.set(0L);
+        AtomicReference<Long> prevCurrentTime = new AtomicReference<>();
+        prevCurrentTime.set(0L);
 
         WebSocketApi webSocketApi = new WebSocketApi(Objects.requireNonNull(webSocketConfiguration).getData().getUrl(), 5000,
                 new WebSocketAdapter() {
                     @Override
                     public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
                         log.info("Connected");
+                        isConnect.set(true);
                     }
 
                     @Override
@@ -100,25 +112,28 @@ public class STCConverter {
 
                     @Override
                     public void onBinaryMessage(WebSocket websocket, byte[] binary) throws Exception {
+                        prevCurrentTime.set(currentTime.get());
                         log.info("Message text onBinaryMessage {}", binary.length);
                     }
                 });
+
         webSocketApi.connect();
 
-        Thread.sleep(5000);
+        while(!isConnect.get()){
+            Thread.sleep(1);
+        }
+
         webSocketApi.sendText("Волков вздохнул, съехал на обочину и остановил коня, жестом дал знак оруженосцу с его " +
                 "штандартом и слугам, Ёгану и Сычу, ехать дальше, сам стал пропускать колону вперёд.");
         log.info("Text sent");
-    }
 
-    @SneakyThrows
-    public void closeWebSocket() {
-        SynthesizeApi synthesizeApi = new SynthesizeApi();
-        WebSocketSynthesizeRequest webSocketRequest =
-                new WebSocketSynthesizeRequest(new WebSocketTextParam("text/plain"), "Vladimir_n", "audio/wav");
-        ApiResponse<WebSocketServerConfiguration> webSocketConfiguration = null;
-        webSocketConfiguration = synthesizeApi.webSocketStreamWithHttpInfo(currentSessionId, webSocketRequest);
-        String transactionId = Objects.requireNonNull(webSocketConfiguration).getHeaders().get("X-Transaction-Id").get(0);
-        synthesizeApi.closeWebSocketStream(currentSessionId, UUID.fromString(transactionId));
+        while (isWait.get()){
+            Thread.sleep(10);
+            currentTime.set(System.nanoTime());
+            if(prevCurrentTime.get() != 0 && (currentTime.get() - prevCurrentTime.get()) > 100000000L){
+                isWait.set(false);
+            }
+        }
+        log.info("Finish");
     }
 }
