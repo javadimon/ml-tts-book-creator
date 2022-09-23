@@ -3,7 +3,7 @@ package com.zubanoff.ml.tts.book.creator.service;
 import com.zubanoff.ml.tts.book.creator.dao.BookRepository;
 import com.zubanoff.ml.tts.book.creator.model.BookEntity;
 import com.zubanoff.ml.tts.book.creator.server.dto.BookCreateRequestDto;
-import com.zubanoff.ml.tts.book.creator.service.converter.Converter;
+import com.zubanoff.ml.tts.book.creator.service.tts.yandex.YandexConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +30,7 @@ import java.util.zip.ZipOutputStream;
 @Slf4j
 public class BookCreatorService {
 
-    private final Converter converter;
+    private final YandexConverter yandexConverter;
     private final BookRepository bookRepository;
     private static final String CHAPTER_SPLITTER = "глава";
     private static final String EMPTY_LINE = "\n";
@@ -51,7 +51,7 @@ public class BookCreatorService {
 
                 if(isChapterToConvert(bookCreateRequestDto, entry.getKey())){
                     log.info("Key {}, Value length {}", entry.getKey(), entry.getValue().length());
-                    converter.convert(entry.getKey(), entry.getValue());
+                    yandexConverter.convert(entry.getKey(), entry.getValue());
                 }
             }
         }

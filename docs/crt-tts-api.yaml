@@ -1,0 +1,1943 @@
+swagger: '2.0'
+info:
+  version: '2.2'
+  title: Документация по TTS API
+  description: |
+    Описание возможностей технологии, инструментов управления и API для интеграции синтеза речи.
+tags:
+  - name: Возможности синтеза
+    description: |
+      Технология синтеза речи позволяет озвучить любой текст на русском, английском и казахском языках.
+      
+      Голоса имеют живое и реалистичное звучание, потому что работают на основе нейронных сетей (DNN).
+
+      Голоса на основе нейросетевой технологии обозначаются пометкой - n.
+      Все голоса существуют в двух версиях для частот дискретизации 22Кгц и 8Кгц.
+
+
+  - {name: SSML теги, description: ''}
+
+  - name: Возможности API
+    description: ''
+
+  - name: Сценарии использования API
+    description: >
+      Сценарий пакетного синтеза речи состоит из следующих шагов:
+
+        1.  [Создать сессию](#operation/startSession)
+        2.  [Получить список доступных языков](#operation/getAvailablePackages)
+        3.  [Получить список доступных голосов](#operation/voices)
+        4.  [Отправить запрос на синтез](#operation/load)
+
+      Сценарий потокового синтеза речи состоит из следующих шагов:
+
+        1.  [Создать сессию](#operation/startSession)
+        2.  [Получить список доступных языков](#operation/getAvailablePackages)
+        3.  [Получить список доступных голосов](#operation/voices)
+        4.  [Получить адрес настройки подключения WebSocket](#operation/webSocketStream)
+        5.  Реализовать логику клиента с использованием потокового синтеза
+        6.  [Закрыть сессию потокового синтеза](#operation/webSocketStream)
+
+
+      ### Далее приведены примеры для каждого метода. В примерах используются библиотеки, исходные файлы которых можно скачать на github.com:
+
+        [Python: speechpro/cloud-python](https://github.com/speechpro/cloud-python)
+        ```
+        pip install speechpro-cloud-python
+        ```
+
+        [Java: stc-speechkit-java/tts/](https://github.com/STC-VoiceKey/stc-speechkit-java)
+
+        [C#: stc-speechkit-csharp/tts/](https://github.com/STC-VoiceKey/stc-speechkit-csharp)
+
+        [Go: stc-speechkit-go/tts/](https://github.com/STC-VoiceKey/stc-speechkit-go)
+
+        [Node.js: stc-speechkit-node.js/tts/](https://github.com/STC-VoiceKey/stc-speechkit-nodejs)
+
+  - {name: Управление сессиями, description: ''}
+  - {name: v1, description: ''}
+  - {name: v1 / Управление языками, description: ''}
+  - name: v1 / Пакетный режим синтеза
+    description: >
+      > Этот режим имеет ограничение по длине обрабатываемого текста (до 500 символов).
+
+
+      > Для синтеза длинных текстов (более 500 символов) используйте потоковый режим.
+
+  - {name: v1 / Потоковый режим синтеза, description: ''}
+  - {name: v2, description: ''}
+  - {name: v2 / Кеш, description: ''}
+  - {name: v2 / Пакетный синтез, description: ''}
+  - {name: v2 / Буферная транзакция, description: ''}
+  - {name: v2 / Потоковый синтез, description: ''}
+basePath: /vktts/rest
+paths:
+  /docs/ssml:
+    get:
+      tags: [Возможности синтеза]
+      summary: SSML разметка
+      description: >
+        Speech Synthesis Markup Language (SSML) (Язык разметки синтеза речи) - представляет собой основанный на XML
+        язык разметки для синтеза речи. Позволяет настраивать произношение и звучание голосов.
+
+
+        Использовать SSML теги можно без предварительной подготовки, указав их в тексте.
+        Применение и интерпретация тегов опирается на стандарт [SSML W3C version 1.1](https://www.w3.org/TR/speech-synthesis11/),
+        если не указано иное.
+
+
+        ### Приоритет применения правил чтения
+
+        Существует следующий приоритет применения правил чтения текста синтезом речи:
+
+        *   элементы SSML и знаки пользовательского ударения в тексте
+
+        *   основной словарь
+
+
+        По умолчанию, если в тексте не использованы элементы SSML, синтез руководствуется правилами основного словаря.
+
+
+        При использовании в тексте, отправляемом на синтез, элементов SSML, в процессе синтеза они будут иметь
+        приоритет над основным словарем
+
+
+
+  #  /docs/fonema:
+#    get:
+#     tags: [Возможности синтеза]
+#      description: >
+#        Фонемная разметка на звука
+#
+#        * one
+#        * Two
+#        * Three
+
+  /docs/ssml/break:
+    get:
+      summary: Break
+      tags: [SSML теги]
+      description: >
+        Используется для вставки паузы при произнесении текста.
+
+        ### Синтаксис
+
+            <break time="длительность паузы"/>
+
+
+
+        ### Атрибуты
+
+        *   **time**
+
+            Длительность паузы: задается в миллисекундах (ms) или в секундах (s) (обязательно для заполнения).
+
+        *   **strength**
+
+            Пауза заданной длинны: "none", "x-weak", "weak", "medium" (по умолчанию), "strong" или "x-strong".
+
+
+
+        ### Примеры
+
+        Между предложениями будет поставлена пауза 5 с (5000 миллисекунд):
+
+          `Я отойду на минутку. <break time="5000"/> Вы еще здесь?`
+
+          `Я отойду на минутку. <break time="5000ms"/> Вы еще здесь?`
+
+          `Я отойду на минутку. <break time="5s"/> Вы еще здесь?`
+
+
+
+#  /docs/ssml/emphasis:
+#    get:
+#      summary: Emphasis
+#      tags: [SSML теги]
+#      description: >
+#        Используется для выделения в произношении какого-либо слова c целью усиления его выразительности в предложении.
+#
+#        ### Синтаксис
+#
+#           <emphasis level="уровень интонационного выделения">text</emphasis>
+#
+#
+#
+#        ### Атрибуты
+#
+#        *   **level**
+#
+#            Уровень интонационного выделения **(обязательно для заполнения)**.
+#            Принимает значения: "strong", "moderate" (по умолчанию), "none", "reduced".
+#
+#
+#
+#        ### Примеры
+#
+#        На слово «огромный» будет поставлено логическое ударение, т.е. ударная гласная "о"
+#        будет произноситься несколько дольше и энергичнее:
+#
+#          `У него <emphasis level="strong">огромный</emphasis> банковский счёт`
+#
+#
+#        Слова будут выделены логически, т.е. будут произносится энергичнее:
+#
+#          `Вы <emphasis level="strong">хотите</emphasis> получить <emphasis level="strong">кредит</emphasis>?`
+
+
+
+
+
+  /docs/ssml/sub:
+    get:
+      summary: Sub
+      tags: [SSML теги]
+      description: >
+        Позволяет во время чтения заменить один текст другим.
+
+        ### Синтаксис
+
+            <sub alias="новый текст"></sub>
+
+
+
+        ### Атрибуты
+
+        *   **alias**
+
+            новый текст **(обязательно для заполнения)**.
+
+
+
+        ### Примеры
+
+        W3C будет прочитано как "Ворлд вайд веб консорциум":
+
+
+        `<sub alias="Ворлд вайд веб консорциум">W3C</sub>`
+
+
+
+
+
+  /docs/ssml/say-as:
+    get:
+      summary: Say-as
+      tags: [SSML теги]
+      description: >
+        Позволяет задать особый способ чтения текста. Тег используется, когда чтение по общим правилам
+        не совпадает с ожидаемым результатом.
+
+        ### Синтаксис
+
+            <say-as
+                literal="замена слова"
+                stress="позиция ударения"
+                interpret-as="интерпретация"
+                format="формат">
+                текст
+            </say-as>
+
+
+
+
+        ### Атрибуты
+
+        *   **literal**
+
+            замена одного слова на другое **(обязательно для заполнения)**.
+
+
+        *   **stress**
+
+            указание места ударения посредством сообщения номера ударной гласной от начала слова.
+
+
+        *   **interpret-as**
+
+            интерпретация текста c учетом формата указанного в аттрибуте **format**.
+
+            *  date
+
+              чтение числа как даты `interpret-as="date"`. Устанавливает чтение даты в григорианском стиле.
+              Текст внутри тега задается в виде числовых полей с разделителями.
+
+              Например:
+
+              `interpret-as="date" format="mdy"`
+
+              Возможные значения форматов:
+
+              * mdy – месяц, день, год;
+              * dmy – день, месяц, год;
+              * ymd – год, месяц день;
+              * md – месяц, день;
+              * dm – день, месяц;
+              * ym – год, месяц;
+              * my – месяц, год;
+              * m – месяц;
+              * d – день;
+              * y – год;
+
+            * time
+
+              Чтение числа как времени, format=hms24 или hms12. Текст внутри тега задается в виде числовых полей
+              с разделителями или без них, в последовательности: часы, минуты, секунды.
+
+            * telephone
+
+              Чтение числа как телефона, атрибут format не задается. Номер телефона может содержать знак «+» и
+              круглые скобки. Номер читается как количественное числительное в именительном падеже.
+              При этом происходит разбиение номера на двух- и трехзначные числа.
+
+              «Нечисловые» слова,
+              попавшие в область действия тега, при этом обрабатываются обычным способом
+
+            * characters
+
+              Чтение по символам. Буквы читаются как алфавитные, числительные по цифрам как количественные в
+              именительном падеже, специальные символы и знаки препинания заменяются соответствующими словами.
+              Прописные и строчные буквы при этом не различаются.
+
+              Атрибут detail не поддерживается.
+
+            * cardinal
+
+              Чтение числа как количественного. Атрибут format содержит разделитель десятичной дроби
+              (в качестве разделителя может быть использована точка, запятая или точка с запятой).
+
+            * ordinal
+
+              Чтение числа как порядкового.
+
+
+
+        ### Примеры
+
+          Замена произношения слова «человек» на разговорное «чек»:
+
+          `<say-as literal="чек">человек</say-as>`
+
+
+          Постановка ударения на третий слог «ПерепрОфилирование»:
+
+          `<say-as stress="3">Перепрофилирование</say-as>`
+
+
+          «3/6/02» будет прочитано, как «6 марта 2002 года»:
+
+          `<say-as interpret-as="date" format="mdy">3/6/02</say-as>`
+
+
+          12:00:00 будет прочитано как «12 часов 0 минут 0 секунд»:
+
+          `<say-as interpret-as="time" format="hms24">12:00:00</say-as>`
+
+
+          2230 будет прочитано как «двадцать два часа тридцать минут»:
+
+          `<say-as interpret-as="time">2230</say-as>`
+
+
+          2222230 будет прочитано, как «двести двадцать два, двадцать два, тридцать»:
+
+          `<say-as interpret-as="telephone">2222230</say-as>`
+
+
+          Будет прочитано: «плюс восемь двадцать два восемьдесят четыре у секретаря двадцать пять девяносто семь»:
+
+          `<say-as interpret-as="telephone">+(8)2284, у секретаря 2597 </say-as>`
+
+
+          Будет прочитано: «бэ два эй два четыре дефис би восклицательный знак зэт икс вопросительный знак решетка семь икс»:
+
+          `<say-as interpret-as="characters"> Б2a24-B!Zx?#7X </say-as>`
+
+
+          222333.22 будет прочитано как «двести двадцать две тысячи триста тридцать три целых и двадцать две сотых»:
+
+          `<say-as interpret-as="cardinal" format=".">222333.22 </say-as>`
+
+
+          2230 будет прочитано как "две тысячи двести тридцатый":
+
+          `<say-as interpret-as="ordinal">2230</say-as>`
+
+
+
+  /docs/ssml/phoneme:
+    get:
+      summary: Phoneme
+      tags: [SSML теги]
+      description: >
+        Используется для указания особого произношения выделенного текста с помощью транскрипции.
+
+        ### Синтаксис
+
+            <phoneme
+                alphabet="ipa"
+                ph="транскрипция">
+                текст, который читается по транскрипции
+            </phoneme>
+
+
+        ### Атрибуты
+
+        *   **alphabet**
+
+            имя алфавита (используется алфавит IPA), **(обязательно для заполнения)**.
+
+
+        *   **ph**
+
+            транскрипция **(обязательно для заполнения)**.
+
+
+
+        ### Примеры
+
+          Слово «томат» будет прочитано по транскрипции как «темеироу»:
+
+          `<phoneme alphabet="ipa" ph="t&#x259;mei&#x325;&#x27E;ou&#x325;"> томат</phoneme>`
+
+
+
+
+
+
+
+
+
+  /docs/api:
+    get:
+      tags: [Возможности API]
+      summary: Введение в API
+      description: >
+
+        TEXT TO SPEECH API представляет собой программный интерфейс с набором команд, позволяющих
+        встраивать синтез речи в программное обеспечение, онлайн сервисы, мобильные приложения и другие продукты.
+
+
+        TTS API позволяет озвучить любой текст на нескольких языках, используя технологию синтеза речи.
+
+
+        Текстовые данные с помощью запросов передаются по протоколу HTTP на сервер, где происходит преобразование
+        текста в синтезированную речь. В ответ пользователь получает звуковые данные с озвученным текстом.
+
+
+        Существует несколько режимов работы  TTS API:
+
+        1.  Пакетный режим.
+            Обработка текстовых данных происходит целиком, результат выдается полностью после обработки всей текстовой информации.
+            Данный вариант включает в себя создание и закрытие сессии, в рамках которой выполняются необходимые запросы.
+
+        2.  Потоковый режим.
+            Обработка текстовых данных происходит постепенно, результат выдается по частям.
+            Данный вариант включает в себя создание и закрытие сессии, в рамках которой выполняются необходимые запросы.
+
+        3.  Режим взаимодействия без установки сессии.
+            API состоит из одного метода, который включает в себя создание сессии и единичное использование синтеза речи.
+            В этом методе отсутствует возможность получения списка доступных языков и голосов, и все данные задаются
+            в одном запросе. Поэтому для его использования необходимо точно знать значение voice_name.
+
+            Метод имеет упрощенную семантику вызова, но при этом имеет немного большие накладные расходы,
+            связанные с созданием внутренней сессии на каждый вызов.
+
+
+          Text to Speech API имеет описание в стандарте [OpenAPI Specification](https://www.openapis.org/)
+          (ранее известное как файл [Swagger](https://swagger.io/)).
+
+
+          OpenAPI Specification содержит сведения о доступных операция в API и о том, как необходимо
+          структурировать данные запросов и ответов для API.
+
+
+          С OpenAPI Specification (Swagger) можно ознакомитсья по адресу:
+          [https://cloud.speechpro.com/vktts/help](https://cloud.speechpro.com/vktts/help/)
+
+           ```
+           Адрес сервиса: https://cloud.speechpro.com/vktts/rest/
+           ```
+
+  /session:
+    post:
+      summary: Создание сессии
+      produces: [application/json;charset=UTF-8]
+      description: Для создания сессии необходимо направить POST-запрос на URL `https://cloud.speechpro.com/vksession/rest/session`.
+      operationId: startSession
+      responses:
+        '200': {description: Запрос выполнен успешно}
+        '400': {description: Неправильные параметры запроса}
+        '500': {description: Внутренняя ошибка сервера}
+        '403': {description: Ошибка при создании сессии}
+      x-code-samples:
+        - lang: Java
+          source: |
+            ApiClient apiClient = new ApiClient();
+            SessionApi sessionApi = new SessionApi(apiClient);
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            SessionDto sessionDto = null;
+            try {
+                sessionDto = sessionApi.startSession(startSessionRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            UUID sessionId = sessionDto.getSessionId();
+        - lang: C#
+          source: |
+            SessionApi sessionApi = new SessionApi();
+            StartSessionRequest credentials = new StartSessionRequest("user", "password", 290);
+            var response = sessionApi.StartSession(credentials);
+            Guid? SessionId = response.SessionId;
+        - lang: Python
+          source: |
+            credentials = StartSessionRequest("admin", "password", 100)
+            session_api = SessionApi()
+            session_id = session_api.start_session(credentials).session_id
+        - lang: Go
+          source: |
+            startSession := cloud.StartSessionRequest{"user", "password", 290}
+            ctx := context.Background()
+            conf := cloud.NewConfiguration()
+            client := cloud.NewAPIClient(conf)
+            sessionApi := client.SessionApi
+            startSessionResponse, _, _ := sessionApi.StartSession(ctx, startSession);
+            sessionId := startSessionResponse.SessionId
+        - lang: Node.js
+          source: |
+            var tts = require('tts_client')
+
+            var startSessionCallback = function(error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.session_id);
+                    var sessionId = data.session_id;
+                }
+            };
+
+            var sessionApi = new tts.SessionApi();
+            var startSessionRequest = new tts.StartSessionRequest("username", "password", 290);
+            sessionApi.startSession(startSessionRequest, startSessionCallback);
+      parameters:
+      - schema: {$ref: '#/definitions/StartSessionRequest'}
+        in: body
+        name: body
+        description: Запрос содержит учетные данные пользователя.
+        required: true
+      tags: [Управление сессиями]
+      consumes: [application/json;charset=UTF-8]
+    get:
+      summary: Проверка статуса сессии
+      produces: [application/json;charset=UTF-8]
+      description: Для проверки статуса сессии необходимо направить GET-запрос на
+        URL `https://cloud.speechpro.com/vksession/rest/session`.
+      operationId: checkSession
+      responses:
+        '200': {description: Запрос выполнен успешно}
+        '400': {description: Неправильные параметры запроса}
+        '500': {description: Внутренняя ошибка сервера}
+        '403': {description: Сессия не найдена}
+      x-code-samples:
+        - lang: Java
+          source: |
+            ApiClient apiClient = new ApiClient();
+            SessionApi sessionApi = new SessionApi(apiClient);
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            SessionDto sessionDto = null;
+            try {
+                sessionDto = sessionApi.startSession(startSessionRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            UUID sessionId = sessionDto.getSessionId();
+            StatusDto checkSessionStatus = null;
+            try {
+                checkSessionStatus = sessionApi.checkSession(sessionDto.getSessionId());
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+        - lang: C#
+          source: |
+            SessionApi sessionApi = new SessionApi();
+            StartSessionRequest credentials = new StartSessionRequest("user", "password", 290);
+            var response = sessionApi.StartSession(credentials);
+            Guid? sessionId = response.SessionId;
+            var response = sessionApi.CheckSession(sessionID);
+        - lang: Python
+          source: |
+            credentials = StartSessionRequest("admin", "password", 290)
+            session_api = SessionApi()
+            session_id = session_api.start_session(credentials).session_id
+            status = session_api.check_session(session_id).status
+        - lang: Go
+          source: |
+            startSession := cloud.StartSessionRequest{"user", "password", 290}
+            ctx := context.Background()
+            conf := cloud.NewConfiguration()
+            client := cloud.NewAPIClient(conf)
+            sessionApi := client.SessionApi
+            startSessionResponse, _, _ := sessionApi.StartSession(ctx, startSession);
+            sessionId := startSessionResponse.SessionId
+            sessionStatusResponse, _, _ := sessionApi.CheckSession(ctx, sessionId)
+        - lang: Node.js
+          source: |
+            var tts = require('tts_client')
+            var checkSessionCallback = function(error, data, response){
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.status);
+                }
+            };
+            var startSessionCallback = function(error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.session_id);
+                    var sessionId = data.session_id;
+                    sessionApi.checkSession(sessionId, checkSessionCallback);
+                }
+            };
+
+            var sessionApi = new tts.SessionApi();
+            var startSessionRequest = new tts.StartSessionRequest("username", "password", 290);
+            sessionApi.startSession(startSessionRequest, startSessionCallback);
+      parameters:
+      - {in: header, name: X-Session-Id, format: uuid, description: Идентификатор
+          сессии, type: string, required: true}
+      tags: [Управление сессиями]
+      consumes: [application/json;charset=UTF-8]
+    delete:
+      summary: Удаление (закрытие) сессии
+      produces: [application/json;charset=UTF-8]
+      description: Для удаления (закрытия) сессии необходимо направить DELETE-запрос
+        на URL `https://cloud.speechpro.com/vksession/rest/session`.
+      operationId: closeSession
+      responses:
+        '200': {description: Запрос выполнен успешно}
+        '400': {description: Неправильные параметры запроса}
+        '500': {description: Внутренняя ошибка сервера}
+        '404': {description: Сессия не найдена}
+      x-code-samples:
+        - lang: Java
+          source: |
+            ApiClient apiClient = new ApiClient();
+            SessionApi sessionApi = new SessionApi(apiClient);
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            SessionDto sessionDto = null;
+            try {
+                sessionDto = sessionApi.startSession(startSessionRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            try {
+                sessionApi.closeSession(sessionDto.getSessionId());
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+        - lang: C#
+          source: |
+            SessionApi sessionApi = new SessionApi();
+            StartSessionRequest credentials = new StartSessionRequest("user", "password", 290);
+            var response = sessionApi.StartSession(credentials);
+            Guid? sessionId = response.SessionId;
+            var response = sessionApi.CheckSession(sessionID);
+            var DeleteResponse = SessionApi.CloseSession(SessionId);
+        - lang: Python
+          source: |
+            credentials = StartSessionRequest("admin", "password", 290)
+            session_api = SessionApi()
+            session_id = session_api.start_session(credentials).session_id
+            status = session_api.close_session(session_id)
+        - lang: Go
+          source: |
+            startSession := cloud.StartSessionRequest{"user", "password", 290}
+            ctx := context.Background()
+            conf := cloud.NewConfiguration()
+            client := cloud.NewCloudAPIClient(conf)
+            sessionApi := client.SessionApi
+            startSessionResponse, _, _ := sessionApi.StartSession(ctx, startSession);
+            sessionId := startSessionResponse.SessionId
+            closeSessionResponse, _, _ := sessionApi.CloseSession(ctx, sessionId)
+        - lang: Node.js
+          source: |
+            var tts = require('tts_client')
+            var closeSessionCallback = function(error, data, response){
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.status);
+                }
+            };
+            var startSessionCallback = function(error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.session_id);
+                    var sessionId = data.session_id;
+                    sessionApi.closeSession(sessionId, closeSessionCallback);
+                }
+            };
+
+            var sessionApi = new tts.SessionApi();
+            var startSessionRequest = new tts.StartSessionRequest("username", "password", 290);
+            sessionApi.startSession(startSessionRequest, startSessionCallback);
+      parameters:
+      - {in: header, name: X-Session-Id, format: uuid, description: Идентификатор
+          сессии, type: string, required: true}
+      tags: [Управление сессиями]
+      consumes: [application/json;charset=UTF-8]
+  /v1/languages:
+    get:
+      summary: Получение списка доступных языков
+      produces: [application/json;charset=UTF-8]
+      description: C помощью технологии синтеза речи можно озвучить текст, написанный на одном из доступных языков. Для получения списка доступных языков необходимо направить GET-запрос на URL `tts/rest/v1/languages`.
+      operationId: languageVoicesSupport
+      responses:
+        '200': {description: Запрос выполнен успешно}
+        '400': {description: Неправильные параметры запроса}
+        '401': {description: Сессия не найдена}
+        '500': {description: Внутренняя ошибка сервера}
+      x-code-samples:
+        - lang: Java
+          source: |
+            ApiClient apiClient = new ApiClient();
+            SessionApi sessionApi = new SessionApi(apiClient);
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            SessionDto sessionDto = null;
+            try {
+                sessionDto = sessionApi.startSession(startSessionRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            UUID sessionId = sessionDto.getSessionId();
+            SynthesizeApi synthesizeClient = new SynthesizeApi();
+            List<SynthesizeLanguage> languages = new ArrayList<>();
+            try {
+                languages = synthesizeClient.languageVoicesSupport(sessionId.toString());
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+        - lang: C#
+          source: |
+            SessionApi sessionApi = new SessionApi();
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            var response = sessionApi.StartSession(startSessionRequest);
+            Guid? sessionId = response.SessionId;
+            SynthesizeApi synthesizeApi = new SynthesizeApi();
+            var getVoicesResponses = synthesizeApi.Languages(sessionId);
+        - lang: Python
+          source: |
+            session_api = SessionApi()
+            credentials = StartSessionRequest("user", "password", 290)
+            session_id = session_api.start_session(credentials).session_id
+            synthesize = SynthesizeApi()
+            languages = synthesize.language_voices_support(session_id)
+        - lang: Go
+          source: |
+            conf := cloud.NewConfiguration()
+            cloudApi := cloud.NewCloudAPIClient(conf)
+            ctx := context.Background()
+            credentials := cloud.StartSessionRequest{"user", "password", 290}
+            sessionApi := cloudApi.SessionApi
+            startSessionResponse, _, _ := sessionApi.StartSession(ctx, credentials);
+            sessionId := startSessionResponse.SessionId
+            synthesys := cloudApi.SynthesizeApi
+            languages, _, _ := synthesys.LanguageVoicesSupport(ctx, sessionId)
+        - lang: Node.js
+          source: |
+            var ttsClient = require('tts_client');
+            var sessionId;
+            var synthesizeApi;
+            var availableLanguagesCallback = function (error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully.');
+                    var languages = data;
+                }
+            }
+            var startSessionCallback = function(error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.session_id);
+                    sessionId = startSessionResponse.session_id;
+                    synthesizeApi = new ttsClient.SynthesizeApi();
+                    synthesizeApi.languageVoicesSupport(sessionId, availableLanguagesCallback);
+                }
+            };
+
+            var sessionApi = new ttsClient.SessionApi();
+            var startSessionRequest = new ttsClient.StartSessionRequest("admin", "password", 290);
+            var startSessionResponse = sessionApi.startSession(startSessionRequest, startSessionCallback);
+      parameters:
+      - {in: header, name: X-Session-Id, description: Идентификатор сессии, type: string,
+        required: true}
+      tags: [v1 / Управление языками]
+      consumes: [application/json;charset=UTF-8]
+  /v1/languages/{language}/voices:
+    get:
+      summary: Получение списка доступных голосов
+      produces: [application/json;charset=UTF-8]
+      description: Для получения списка голосов для озвучки на определенном языке необходимо направить GET-запрос на URL `/languages/{language}/voices`, где {language} – имя языка, для которого требуется получить список доступных голосов.
+      operationId: voices
+      responses:
+        '200': {description: Запрос выполнен успешно}
+        '400': {description: Неправильные параметры запроса}
+        '401': {description: Сессия не найдена}
+        '500': {description: Внутренняя ошибка сервера}
+      x-code-samples:
+        - lang: Java
+          source: |
+            ApiClient apiClient = new ApiClient();
+            SessionApi sessionApi = new SessionApi(apiClient);
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            SessionDto sessionDto = null;
+            try {
+                sessionDto = sessionApi.startSession(startSessionRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            UUID sessionId = sessionDto.getSessionId();
+            SynthesizeApi synthesizeClient = new SynthesizeApi();
+            List<SynthesizeVoiceType> voices = new ArrayList<>();
+            try {
+                voices = synthesizeClient.voices(sessionId, "English");
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+        - lang: C#
+          source: |
+            SessionApi sessionApi = new SessionApi();
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            var response = sessionApi.StartSession(startSessionRequest);
+            Guid? sessionId = response.SessionId;
+            SynthesizeApi synthesizeApi = new SynthesizeApi();
+            var getVoicesResponses = synthesizeApi.Voices(sessionId, "Russian");
+        - lang: Python
+          source: |
+            credentials = StartSessionRequest("user", "password", 290)
+            session_id = session_api.start_session(credentials).session_id
+            synthesize = SynthesizeApi()
+            voices = synthesize.voices(session_id, "English")
+        - lang: Go
+          source: |
+            conf := cloud.NewConfiguration()
+            cloudApi := cloud.NewCloudAPIClient(conf)
+            ctx := context.Background()
+            credentials := cloud.StartSessionRequest{"user", "password", 290}
+            sessionApi := cloudApi.SessionApi
+            startSessionResponse, _, _ := sessionApi.StartSession(ctx, credentials);
+            sessionId := startSessionResponse.SessionId
+            synthesys := cloudApi.SynthesizeApi
+            voices, _, _ := synthesys.Voices(ctx, sessionId, "English")
+        - lang: Node.js
+          source: |
+            var ttsClient = require('tts_client');
+            var sessionId;
+            var synthesizeApi;
+            var availableVoicesCallback = function (error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully.');
+                    var voices = data;
+                }
+            }
+            var startSessionCallback = function(error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.session_id);
+                    sessionId = startSessionResponse.session_id;
+                    synthesizeApi = new ttsClient.SynthesizeApi();
+                    synthesizeApi.languageVoicesSupport(sessionId, availableVoicesCallback);
+                }
+            };
+
+            var sessionApi = new ttsClient.SessionApi();
+            var startSessionRequest = new ttsClient.StartSessionRequest("admin", "password", 290);
+            var startSessionResponse = sessionApi.startSession(startSessionRequest, startSessionCallback);
+      parameters:
+      - {in: header, name: X-Session-Id, format: uuid, description: Идентификатор
+          сессии, type: string, required: true}
+      - {in: path, name: language, description: Наименование языка, type: string,
+        required: true}
+      tags: [v1 / Управление языками]
+      consumes: [application/json;charset=UTF-8]
+  /v1/synthesize:
+    post:
+      summary: Запрос на синтез в пакетном режиме
+      produces: [application/json;charset=UTF-8]
+      description: 'В этом режиме клиент будет ожидать завершения синтеза всего текста. Результат будет передан одним файлом.'
+      operationId: synthesize
+      responses:
+        '200': {description: Запрос выполнен успешно}
+        '400': {description: Неправильные параметры запроса}
+        '401': {description: Сессия не найдена}
+        '500': {description: Внутренняя ошибка сервера}
+        '404': {description: Голос не найден}
+      x-code-samples:
+        - lang: Python
+          source: |
+            import os
+            from speechpro.cloud.speech import synthesis
+
+            сlient = synthesis.SynthesisClient(
+                os.environ['SPEECHPRO_USERNAME'],
+                os.environ['SPEECHPRO_DOMAIN_ID'],
+                os.environ['SPEECHPRO_PASSWORD']
+            )
+
+            text = 'Привет, я - синтезированный голос от компании ЦРТ'
+            audio = сlient.synthesize(synthesis.enums.Voice.JULIA, synthesis.enums.PlaybackProfile.SPEAKER, text)
+
+            with open('output.wav', 'wb') as f:
+                f.write(audio)
+        - lang: Java
+          source: |
+            ApiClient apiClient = new ApiClient();
+            SessionApi sessionApi = new SessionApi(apiClient);
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            SessionDto sessionDto = null;
+            try {
+                sessionDto = sessionApi.startSession(startSessionRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            UUID sessionId = sessionDto.getSessionId();
+            SynthesizeApi synthesizeClient = new SynthesizeApi();
+            client.model.SynthesizeText synthesizeText = new client.model.SynthesizeText("text/plain", "Text to be synthesized");
+            SynthesizeRequest synthesizeRequest = new SynthesizeRequest(synthesizeText, "Carol", "audio/wav");
+            SynthesizeResponse synthesizeResponse;
+            try {
+                synthesizeResponse = synthesizeClient.synthesize(sessionId.toString(), synthesizeRequest);
+            } catch (ApiException e) {
+                System.out.println(e.getResponseBody());
+                e.printStackTrace();
+            }
+        - lang: C#
+          source: |
+            SessionApi sessionApi = new SessionApi();
+            StartSessionRequest credentials = JsonConvert.DeserializeObject<StartSessionRequest>(credentialsString);
+            var response = sessionApi.StartSession(credentials);
+            Guid? sessionId = response.SessionId;
+            SynthesizeApi synthesizeApi = new SynthesizeApi();
+            string synthesizeStringRequest = @"{""text"":{
+                                                      ""mime"":""text/plain"",
+                                                      ""value"":""Hello world!""
+                                                       },
+                                                ""voice_name"":""Carol"",
+                                                ""audio"":""audio/wav""
+                                                }";
+            var synthesizeResponse = synthesizeApi.Synthesize(sessionId.ToString(), request);
+            byte [] sound = Convert.FromBase64String(synthesizeResponse.Data);
+        - lang: Go
+          source: |
+            conf := cloud.NewConfiguration()
+            cloudApi := cloud.NewCloudAPIClient(conf)
+            ctx := context.Background()
+            credentials := cloud.StartSessionRequest{"user", "password", 290}
+            sessionApi := cloudApi.SessionApi
+            startSessionResponse, _, _ := sessionApi.StartSession(ctx, credentials);
+            sessionId := startSessionResponse.SessionId
+            synthesis := cloudApi.SynthesizeApi
+            synthesisText := &cloud.SynthesizeText{"text/plain", "Text to be synthesised"}
+            synthesisRequest := cloud.SynthesizeRequest{synthesisText, "Carol", "audio/wav"}
+            synthesisResponse, _, _ := synthesis.Synthesize(ctx, sessionId, synthesisRequest)
+            sound, _ := base64.StdEncoding.DecodeString(synthesisResponse.Data)
+        - lang: Node.js
+          source: |
+            var ttsClient = require('tts_client');
+            var sessionId;
+            var synthesizeApi;
+            var synthesizeCallback = function (error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully.');
+                    var sound = Buffer.from(data.data, 'base64');
+                }
+            }
+            var startSessionCallback = function(error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.session_id);
+                    sessionId = startSessionResponse.session_id;
+                    synthesizeApi = new ttsClient.SynthesizeApi();
+                    var synthesizeText = new ttsClient.SynthesizeText("text/plain", "Text to be synthesised");
+                    var synthesizeRequest = new ttsClient.SynthesizeRequest(synthesizeText, "Carol", "audio/wav");
+                    synthesizeApi.synthesize(sessionId,synthesizeRequest, synthesizeCallback);
+                }
+            };
+
+            var sessionApi = new ttsClient.SessionApi();
+            var startSessionRequest = new ttsClient.StartSessionRequest("admin", "password", 290);
+            var startSessionResponse = sessionApi.startSession(startSessionRequest, startSessionCallback);
+      parameters:
+      - {in: header, name: X-Session-ID, format: uuid, description: Идентификатор сессии,
+        type: string, required: true}
+      - {in: header, name: X-Request-Id, description: Идентификатор запроса, type: string,
+        required: false}
+      - schema: {$ref: '#/definitions/SynthesizeRequest'}
+        in: body
+        name: body
+        description: 'В запросе передаются следующие данные:'
+        required: true
+      tags: [v1 / Пакетный режим синтеза]
+      consumes: [application/json;charset=UTF-8]
+  /v1/synthesize/stream:
+    post:
+      summary: Создание подключения по протоколу Websocket
+      produces: [application/json;charset=UTF-8]
+      description: Для потокового распознавания требуется создать подключение по протоколу Websocket. Для этого направить POST-запрос на URL  `v1/synthesize/stream`, передав в запросе формат синтезированного аудио и информацию о голосе. Результатом выполнения запроса является ссылка для подключения по протоколу Websocket. После установления подключения, можно отправлять текстовые данные на сервер, а в ответ получать PCM в бинарном виде.
+      operationId: webSocketStream
+      responses:
+        '200': {description: Запрос выполнен успешно}
+        '400': {description: Неправильные параметры запроса}
+        '401': {description: Сессия не найдена}
+        '500': {description: Внутренняя ошибка сервера}
+      x-code-samples:
+        - lang: Java
+          source: |
+            // for Websocket connection nv-websocket-client is used here
+            ApiClient apiClient = new ApiClient();
+            SessionApi sessionApi = new SessionApi(apiClient);
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            SessionDto sessionDto = null;
+            try {
+                sessionDto = sessionApi.startSession(startSessionRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            UUID sessionId = sessionDto.getSessionId();
+            SynthesizeApi synthesizeApi = new SynthesizeApi();
+            WebSocketSynthesizeRequest webSocketRequest =
+                new WebSocketSynthesizeRequest(new WebSocketTextParam("text/plain"), "Carol", "audio/wav");
+            ApiResponse<WebSocketServerConfiguration> webSocketConfiguration = null;
+            try {
+                webSocketConfiguration = synthesizeApi.webSocketStreamWithHttpInfo(sessionId, webSocketRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            // you should implement methods for different events
+            WebSocketApi webSocketApi = new WebSocketApi(webSocketConfiguration.getData().getUrl(), 5000,
+                    new WebSocketAdapter() {
+                        public void onTextMessage(WebSocket websocket, String message) {
+                            System.out.println(message);
+                        }
+                        @Override
+                        public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
+                            System.out.println("Connected");
+                        }
+                        @Override
+                        public void onError(WebSocket websocket, WebSocketException cause) throws Exception {
+                            System.out.println(cause.getMessage());
+                            System.out.println("Error!");
+                        }
+                    });
+            webSocketApi.connect();
+        - lang: C#
+          source: |
+            //for Websocket connection WebSocket4Net can be used
+            SessionApi sessionApi = new SessionApi();
+            Credentials credentials = new Credentials("user", "password", 290);
+            var response = sessionApi.StartSession(credentials);
+            Guid? sessionId = response.SessionId;
+            SynthesizeApi synthesizeApi = new SynthesizeApi();
+            string synthesizeStringRequest = @"{""text"":{
+                                                      ""mime"":""text/plain""
+                                                       },
+                                                ""voice_name"":""Carol"",
+                                                ""audio"":""audio/s16le""
+                                                }";
+            WebSocketSynthesizeRequest request = JsonConvert.DeserializeObject<WebSocketSynthesizeRequest>(synthesizeStringRequest);
+            var synthesizeResponse = synthesizeApi.WebSocketStream(sessionId.ToString(), request);
+            WebSocket websocket = new WebSocket(synthesizeResponse.Url);
+            websocket.Opened += new EventHandler(Websocket_Opened);
+            websocket.Error += new EventHandler<SuperSocket.ClientEngine.ErrorEventArgs>(Websocket_Error);
+            websocket.Closed += new EventHandler(Websocket_Closed);
+            websocket.MessageReceived += new EventHandler<MessageReceivedEventArgs>(Websocket_MessageReceived);
+            websocket.Send("I want to convert any text to audio file. With sockets it can be really long text.");
+
+            // you have to implement methods for different events
+            private static void Websocket_Error(object sender, SuperSocket.ClientEngine.ErrorEventArgs e)
+            {
+                throw new NotImplementedException();
+            }
+
+            private static void Websocket_MessageReceived(object sender, EventArgs e)
+            {
+                throw new NotImplementedException();
+            }
+
+            private static void Websocket_Closed(object sender, EventArgs e)
+            {
+                throw new NotImplementedException();
+            }
+
+            private static void Websocket_Opened(object sender, EventArgs e)
+            {
+                throw new NotImplementedException();
+            }
+        - lang: Python
+          source: |
+            # for Websocket connection websockets module can be used
+            session_api = SessionApi()
+            credentials = StartSessionRequest("user", "password", 290)
+            session_id = session_api.start_session(credentials).session_id
+            synthesis_api = SynthesizeApi()
+            text_to_be_synthesized = "Text to be synthesized"
+            text_param = WebSocketTextParam("text/plain")
+            stream_request = WebSocketSynthesizeRequest(text_param, "Carol", "audio/s16le")
+            web_socket_configuration = synthesis_api.web_socket_stream(session_id, stream_request)
+            url = web_socket_configuration.url
+            # websockets
+            async def hello(uri, data):
+                async with websockets.connect(uri) as websocket:
+                    await websocket.send(data)
+                    sound = await websocket.recv()
+                    print(f"< {sound}")
+            asyncio.get_event_loop().run_until_complete(hello(url, text_to_be_synthesized))
+        - lang: Go
+          source: |
+            // for Websocket github.com/gorilla/websocket package can be used
+            conf := cloud.NewConfiguration()
+            cloudApi := cloud.NewCloudAPIClient(conf)
+            ctx := context.Background()
+            credentials := cloud.StartSessionRequest{"user", "password", 290}
+            sessionApi := cloudApi.SessionApi
+            startSessionResponse, _, _ := sessionApi.StartSession(ctx, credentials);
+            sessionId := startSessionResponse.SessionId
+            synthesis := cloudApi.SynthesizeApi
+            webSocketParam := &cloud.WebSocketTextParam{"text/plain"}
+            webSocketRequest := cloud.WebSocketSynthesizeRequest{webSocketParam, "Carol", "audio/wav"}
+            webSocketConfig, _, _ := synthesis.WebSocketStream(ctx, sessionId, webSocketRequest)
+            webSocketUrl := webSocketConfig.Url
+            // github.com/gorilla/websocket
+            var dialer *Dialer
+            conn, _, err := dialer.Dial(webSocketUrl, nil)
+            if err != nil {
+                fmt.Println(err)
+                return
+            }
+            go func() {
+                for {
+                    _, message, err := conn.ReadMessage()
+                    if err != nil {
+                        log.Println("read:", err)
+                        return
+                    }
+                    log.Printf("recv: %s", message)
+                }
+            }()
+            for {
+                    conn.WriteMessage(TextMessage, []byte("Text to be synthesised"))
+            }
+            for {
+                _, message, _ := conn.ReadMessage()
+                fmt.Printf("received: %s\n", message)
+            }
+        - lang: Node.js
+          source: |
+            var ttsClient = require('tts_client');
+            var sessionId;
+            var startWebsocketCallback = function (error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data);
+                    var streamUrl = data.url;
+                    var WebSocketClient = require('websocket').client;
+                    var client = new WebSocketClient();
+                    client.on('connectFailed', function (error) {
+                        //implement your logic here);
+                    });
+                    client.on('connect', function (connection) {
+                        //implement your logic here);
+                        connection.on('error', function (error) {
+                            //implement your logic here);
+                        });
+                        connection.on('message', function (message) {
+                            //implement your logic here);
+                        });
+                        function sendText() {
+                            if (connection.connected) {
+                                console.log("connected")
+                                connection.sendUTF('Text to be synthesized');
+                                setTimeout(sendText, 1000);
+                            }
+                        }
+                        sendText();
+                    });
+                    client.connect(streamUrl);
+                }
+            }
+            var startSessionCallback = function(error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.session_id);
+                    sessionId = startSessionResponse.session_id;
+                    var synthesizeApi = new ttsClient.SynthesizeApi();
+                    var textParam = new synthesizeApi.WebSocketTextParam("text/plain");
+                    var streamRequest = new synthesizeApi.WebSocketSynthesizeRequest(textParam, "Carol", "audio/s16le");
+                    synthesizeApi.webSocketStream(sessionId, streamRequest, startWebsocketCallback);
+                }
+            };
+
+            var sessionApi = new ttsClient.SessionApi();
+            var startSessionRequest = new ttsClient.StartSessionRequest("admin", "password", 290);
+            var startSessionResponse = sessionApi.startSession(startSessionRequest, startSessionCallback);
+      parameters:
+      - {in: header, name: X-Session-ID, format: uuid, description: Идентификатор сессии,
+        type: string, required: true}
+      - {in: header, name: X-Request-Id, description: Идентификатор запроса, type: string,
+        required: false}
+      - schema: {$ref: '#/definitions/WebSocketSynthesizeRequest'}
+        in: body
+        name: body
+        description: 'В запросе передаются следующие параметры:'
+        required: true
+      tags: [v1 / Потоковый режим синтеза]
+      consumes: [application/json;charset=UTF-8]
+    delete:
+      summary: Закрытие подключения по протоколу Websocket
+      produces: [application/json;charset=UTF-8]
+      description: ''
+      operationId: webSocketStream
+      responses:
+        '200': {description: Запрос выполнен успешно}
+        '400': {description: Неправильные параметры запроса}
+        '401': {description: Сессия не найдена}
+        '500': {description: Внутренняя ошибка сервера}
+        '404': {description: Транзакция не найдена}
+      x-code-samples:
+        - lang: Java
+          source: |
+            ApiClient apiClient = new ApiClient();
+            SessionApi sessionApi = new SessionApi(apiClient);
+            StartSessionRequest startSessionRequest = new StartSessionRequest("user", "password", 290L);
+            SessionDto sessionDto = null;
+            try {
+                sessionDto = sessionApi.startSession(startSessionRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            UUID sessionId = sessionDto.getSessionId();
+            SynthesizeApi synthesizeApi = new SynthesizeApi();
+            WebSocketSynthesizeRequest webSocketRequest =
+                new WebSocketSynthesizeRequest(new WebSocketTextParam("text/plain"), "Carol", "audio/wav");
+            ApiResponse<WebSocketServerConfiguration> webSocketConfiguration = null;
+            try {
+                webSocketConfiguration = synthesizeApi.webSocketStreamWithHttpInfo(sessionId, webSocketRequest);
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+            String transactionId = webSocketConfiguration.getHeaders().get("X-Transaction-Id").get(0);
+            try {
+                synthesizeApi.closeWebSocketStream(sessionId, UUID.fromString(transactionId));
+            } catch (ApiException e) {
+                e.printStackTrace();
+            }
+        - lang: C#
+          source: |
+            SessionApi sessionApi = new SessionApi();
+            string credentialsString = @"{""username"":""user"", ""password"":""password"",""domain_id"":""290""}";
+            StartSessionRequest credentials = JsonConvert.DeserializeObject<StartSessionRequest>(credentialsString);
+            var response = sessionApi.StartSession(credentials);
+            Guid? sessionId = response.SessionId;
+            SynthesizeApi synthesizeApi = new SynthesizeApi();
+            string synthesizeStringRequest = @"{""text"":{
+                                                      ""mime"":""text/plain""
+                                                       },
+                                                ""voice_name"":""Carol"",
+                                                ""audio"":""audio/s16le""
+                                                }";
+            WebSocketSynthesizeRequest request = JsonConvert.DeserializeObject<WebSocketSynthesizeRequest>(synthesizeStringRequest);
+            ApiResponse<WebSocketServerConfiguration> webSocketConfig = synthesizeApi.WebSocketStreamWithHttpInfo(sessionId.ToString(), request);]
+            var headers = websocketConfig.Headers;
+            var transactionId = headers["X-Transaction-Id"];
+            synthesizeApi.CloseWebSocketStream(sessionId, transactionId);
+        - lang: Python
+          source: |
+            session_api = SessionApi()
+            credentials = StartSessionRequest("user", "password", 290)
+            session_id = session_api.start_session(credentials).session_id
+            synthesis_api = SynthesizeApi()
+            text_to_be_synthesized = "Text to be synthesized"
+            text_param = WebSocketTextParam("text/plain")
+            stream_request = WebSocketSynthesizeRequest(text_param, "Carol", "audio/s16le")
+            web_socket_configuration = synthesis_api.web_socket_stream_with_http_info(session_id, stream_request)
+            transaction_id = web_socket_configuration[2]['X-Transaction-Id']
+            synthesis_api.web_socket_stream_0(session_id, transaction_id)
+        - lang: Go
+          source: |
+            conf := cloud.NewConfiguration()
+            cloudApi := cloud.NewCloudAPIClient(conf)
+            ctx := context.Background()
+            credentials := cloud.StartSessionRequest{"user", "password", 290}
+            sessionApi := cloudApi.SessionApi
+            startSessionResponse, _, _ := sessionApi.StartSession(ctx, credentials);
+            sessionId := startSessionResponse.SessionId
+            synthesis := cloudApi.SynthesizeApi
+            webSocketParam := &cloud.WebSocketTextParam{"text/plain"}
+            webSocketRequest := cloud.WebSocketSynthesizeRequest{webSocketParam, "Carol", "audio/wav"}
+            webSocketConfig, response, _ := synthesis.WebSocketStream(ctx, sessionId, webSocketRequest)
+            webSocketUrl := webSocketConfig.Url
+            headers := response.Header
+            transactionId := headers.Get("X-Transaction-Id")
+            synthesis.WebSocketStream_1(ctx, sessionId, transactionId)
+        - lang: Node.js
+          source: |
+            var ttsClient = require('tts_client');
+            var sessionId;
+            var synthesizeApi;
+
+            var closeWebSocketCallback = function (error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data:' + data.status);
+                }
+            }
+
+            var startWebsocketCallback = function (error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully.');
+                    var transactionId = response.header['x-transaction-id'];
+                    synthesizeApi.closeWebSocketStream(sessionId, transactionId, closeWebSocketCallback);
+                }
+            }
+            var startSessionCallback = function(error, data, response) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('API called successfully. Returned data: ' + data.session_id);
+                    sessionId = startSessionResponse.session_id;
+                    synthesizeApi = new ttsClient.SynthesizeApi();
+                    var textParam = new synthesizeApi.WebSocketTextParam("text/plain");
+                    var streamRequest = new synthesizeApi.WebSocketSynthesizeRequest(textParam, "Carol", "audio/s16le");
+                    synthesizeApi.webSocketStream(sessionId, streamRequest, startWebsocketCallback);
+                }
+            };
+
+            var sessionApi = new ttsClient.SessionApi();
+            var startSessionRequest = new ttsClient.StartSessionRequest("admin", "password", 290);
+            var startSessionResponse = sessionApi.startSession(startSessionRequest, startSessionCallback);
+      parameters:
+      - {in: header, name: X-Session-ID, format: uuid, description: Идентификатор сессии,
+        type: string, required: true}
+      - {in: header, name: X-Transaction-Id, format: uuid, description: Идентификатор транзакции,
+        type: string, required: true}
+      tags: [v1 / Потоковый режим синтеза]
+      consumes: [application/json;charset=UTF-8]
+  /v2/cache/clear:
+    delete:
+      tags:
+        - v2 / Кеш
+      summary: Очистить кеш
+      description: ''
+      operationId: clearCache
+      parameters:
+        - name: X-Session-ID
+          in: header
+          description: Session identifier
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '204':
+          description: No content
+        '400':
+          description: Request is incorrect
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '401':
+          description: Session id is not valid or expired
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '500':
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/MessageDto'
+  /v2/languages:
+    get:
+      tags:
+        - v2 / Управление языками
+      summary: Доступные языки
+      description: ''
+      operationId: languages
+      produces:
+        - application/json;charset=UTF-8
+      parameters:
+        - name: X-Session-ID
+          in: header
+          description: Идентификатор сессии
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Ok
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Language'
+        '400':
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '401':
+          description: Неверный идентификатор сессии
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '500':
+          description: Внутрення ошибка сервера
+          schema:
+            $ref: '#/definitions/MessageDto'
+  /v2/languages/{language}/voices:
+    get:
+      tags:
+        - v2 / Управление языками
+      summary: Доступные голоса для языка
+      description: ''
+      operationId: voices
+      produces:
+        - application/json;charset=UTF-8
+      parameters:
+        - name: X-Session-ID
+          in: header
+          description: Session identifier
+          required: true
+          type: string
+          format: uuid
+        - name: language
+          in: path
+          description: Language
+          required: true
+          type: string
+      responses:
+        '200':
+          description: Ok
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Voice'
+        '400':
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '401':
+          description: SessionId is not valid or expired
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '500':
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/MessageDto'
+  /v2/synthesizer/text:
+    put:
+      tags:
+        - v2 / Пакетный синтез
+      summary: Синтезировать речь из текста
+      description: ''
+      operationId: synthesize
+      produces:
+        - application/json;charset=UTF-8
+      parameters:
+        - name: X-Session-ID
+          in: header
+          description: Идентификатор сессии
+          required: true
+          type: string
+          format: uuid
+        - in: body
+          name: body
+          description: Request
+          required: true
+          schema:
+            $ref: '#/definitions/SynthesizeTextRequest'
+      responses:
+        '200':
+          description: Ok
+          schema:
+            $ref: '#/definitions/AudioFile'
+        '204':
+          description: Файл не содержит подходящие данные
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '400':
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '401':
+          description: Неверная сессия
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '404':
+          description: Голос не найден
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '500':
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/MessageDto'
+  /v2/transaction/buffer:
+    post:
+      tags:
+        - v2 / Буферная транзакция
+      summary: Начать буферную транзакцию
+      description: ''
+      operationId: bufferTransactionStart
+      produces:
+        - application/json;charset=UTF-8
+      parameters:
+        - name: X-Session-ID
+          in: header
+          description: Идентификатор сессии
+          required: true
+          type: string
+          format: uuid
+        - in: body
+          name: body
+          description: Запрос
+          required: true
+          schema:
+            $ref: '#/definitions/SynthesizeVoiceRequest'
+      responses:
+        '200':
+          description: Ok
+        '400':
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '401':
+          description: Неверная сессия
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '500':
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/MessageDto'
+  /v2/transaction/text:
+    put:
+      tags:
+        - v2 / Буферная транзакция
+      summary: Синтезировать текст в буферной транзакции
+      description: ''
+      operationId: bufferTransactionSynth
+      produces:
+        - application/json;charset=UTF-8
+      parameters:
+        - name: X-Session-ID
+          in: header
+          description: Идентификатор сессии
+          required: true
+          type: string
+          format: uuid
+        - name: X-Transaction-Id
+          in: header
+          description: Идентификатор трнзакции
+          required: true
+          type: string
+          format: uuid
+        - in: body
+          name: body
+          description: Запрос
+          required: true
+          schema:
+            $ref: '#/definitions/TextRequest'
+      responses:
+        '200':
+          description: Ok
+          schema:
+            $ref: '#/definitions/AudioFile'
+        '400':
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '401':
+          description: Неверная сессия
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '500':
+          description: Внутрення ошибка сервера
+          schema:
+            $ref: '#/definitions/MessageDto'
+  /v2/transaction/ws:
+    post:
+      tags:
+        - v2 / Потоковый синтез
+      summary: Получить url WebSocket
+      description: ''
+      operationId: webSocketTransactionStart
+      produces:
+        - application/json;charset=UTF-8
+      parameters:
+        - name: X-Session-ID
+          in: header
+          description: Идентификатор сессии
+          required: true
+          type: string
+          format: uuid
+        - in: body
+          name: body
+          description: Запрос
+          required: true
+          schema:
+            $ref: '#/definitions/SynthesizeVoiceRequest'
+      responses:
+        '200':
+          description: Ok
+          schema:
+            $ref: '#/definitions/WebSocketUrl'
+        '400':
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '401':
+          description: Неверная сессия
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '500':
+          description: Внутрення ошибка сервера
+          schema:
+            $ref: '#/definitions/MessageDto'
+  /v2/transaction:
+    delete:
+      tags:
+        - v2 / Потоковый синтез
+      summary: Закрыть транзакцию
+      description: ''
+      operationId: closeTransaction
+      produces:
+        - application/json;charset=UTF-8
+      parameters:
+        - name: X-Session-ID
+          in: header
+          description: Идентификатор сессии
+          required: true
+          type: string
+          format: uuid
+        - name: X-Transaction-Id
+          in: header
+          description: Идентификатор транзакции
+          required: true
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Ok
+          schema:
+            $ref: '#/definitions/TransactionCloseResponse'
+        '400':
+          description: Неверный запрос
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '401':
+          description: Неверная сессия
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '404':
+          description: Транзакция не найдена
+          schema:
+            $ref: '#/definitions/MessageDto'
+        '500':
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/MessageDto'
+schemes: [https]
+definitions:
+  TextRequest:
+    type: object
+    required:
+      - text
+    properties:
+      text:
+        type: string
+        description: Text to synthesize
+        readOnly: true
+    xml:
+      name: TextRequest
+  TransactionCloseResponse:
+    type: object
+    properties:
+      text_processed:
+        type: integer
+        format: int64
+        readOnly: true
+      sound_produced:
+        type: integer
+        format: int64
+        readOnly: true
+  AudioFile:
+    type: object
+    properties:
+      data:
+        type: array
+        readOnly: true
+        items:
+          type: string
+          format: byte
+      mime:
+        type: string
+        readOnly: true
+        enum:
+          - PCM
+          - WAV
+      sampling_rate:
+        type: integer
+        format: int32
+        readOnly: true
+  SynthesizeTextRequest:
+    type: object
+    required:
+      - mime
+      - text
+      - voice
+    properties:
+      text:
+        type: string
+        description: Text to synthesize
+        readOnly: true
+      mime:
+        type: string
+        description: Resulting sound mime type
+        readOnly: true
+        enum:
+          - PCM
+          - WAV
+      voice:
+        type: string
+        description: Name of voice
+        readOnly: true
+      byte_order:
+        position: 1
+        description: Resulting sound byte order
+    xml:
+      name: SynthesizeTextRequest
+  Voice:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+        readOnly: true
+      name:
+        type: string
+        readOnly: true
+      gender:
+        type: string
+        readOnly: true
+        enum:
+          - UNDEFINED
+          - MALE
+          - FEMALE
+      sampling_rate:
+        type: integer
+        format: int64
+        readOnly: true
+  ByteOrder:
+    type: object
+  ClientInfo:
+    type: object
+    properties:
+      type:
+        type: string
+        readOnly: true
+        enum:
+          - MOBILE
+          - BROWSER
+          - EXTERNAL
+          - OTHER
+      description:
+        type: string
+        readOnly: true
+  WebSocketUrl:
+    type: object
+    required:
+      - url
+    properties:
+      url:
+        type: string
+        description: Web socket url
+        readOnly: true
+    xml:
+      name: WebSocketUri
+  SynthesizeVoiceRequest:
+    type: object
+    required:
+      - voice
+    properties:
+      voice:
+        type: string
+        description: Name of voice
+        readOnly: true
+      byte_order:
+        position: 1
+        description: Resulting sound byte order
+    xml:
+      name: SynthesizeVoiceRequest
+  Language:
+    type: object
+    properties:
+      id:
+        type: integer
+        format: int64
+        readOnly: true
+      name:
+        type: string
+        readOnly: true
+  MessageDto:
+    type: object
+    properties:
+      reason:
+        type: string
+        example: EXCEPTION_REASON
+        description: Reason
+      message:
+        type: string
+        example: Some message
+        description: Message
+    description: Object for exceptions/messages wrapping
+  StatusDto:
+    type: object
+    required:
+      - status
+    properties:
+      status: {description: Результат выполнения команды, type: string, example: OK}
+  SynthesizeLanguage:
+    type: object
+    required:
+      - name
+      - id
+    properties:
+      name: {description: Имя языка, position: 1, type: string}
+      id: {description: Идентификатор языка, type: string}
+  ExceptionModel:
+    type: object
+    required:
+      - reason
+      - message
+    properties:
+    reason: {description: Причина возникновения ошибки, type: string}
+    message: {description: 'Сообщение, поясняющее причину возникновения ошибки', position: 1,
+      type: string}
+  CloseTransactionResponse:
+    type: object
+    required:
+      - transaction_id
+      - synthesize_text_size
+    properties:
+      transaction_id: {description: Идентификатор транзакции, type: string}
+      synthesize_text_size: {format: int64, description: Размер синтезированного текста., type: integer}
+  SynthesizeText:
+    type: object
+    required:
+      - mime
+      - value
+    properties:
+      mime: {description: Тип входных текстовых данных. Возможное значение `text/plain` – простой текст, type: string, example: text/plain}
+      value: {description: Текст который надо озвучить.  Длина не более **300 символов**., position: 1, type: string}
+  SynthesizeResponse:
+    type: object
+    required:
+      - data
+    properties:
+      data: {description: 'Синтезированные аудиоданные, закодированные с помощью стандарта Base64', type: string}
+  SynthesizeVoiceType:
+    type: object
+    required:
+      - gender
+      - name
+      - id
+    properties:
+      gender:
+        description: Пол голоса
+        position: 2
+        type: string
+        enum: [UNDEFINED, MALE, FEMALE]
+      name: {description: Имя голоса, position: 1, type: string}
+      id: {description: Идентификатор голоса, type: string}
+  WebSocketServerConfiguration:
+    type: object
+    required:
+      - url
+    properties:
+      url: {description: '', type: string}
+  WebSocketTextParam:
+    type: object
+    required:
+      - mime
+    properties:
+      mime: {description: Формат синтезированного аудио, type: string, example: text/plain}
+  StartSessionRequest:
+    type: object
+    required:
+      - domain_id
+      - password
+      - username
+    properties:
+      domain_id: {format: int64, description: Идентификатор домена пользователя, position: 2, type: integer, example: 203}
+      password: {description: Пароль пользователя, position: 1, type: string, example: '123'}
+      username: {description: Имя пользователя, type: string, example: api_administrator}
+  SessionDto:
+    type: object
+    required:
+      - session_id
+    properties:
+      session_id:
+        format: uuid
+        description: Идентификатор сессии
+        type: string
+        enum: [UUID]
+        example: f67ca981-343e-46f8-a365-4f67b1542517
+  SynthesizeRequest:
+    type: object
+    required:
+      - voice_name
+      - text
+      - audio
+    properties:
+      voice_name: {description: Имя голоса, position: 1, type: string}
+      text: {description: 'Текст, который требуется озвучить.', $ref: '#/definitions/SynthesizeText'}
+      audio: {description: 'Формат синтезированного аудио. Допустимые значения: `audio/wav`', position: 2, type: string, example: audio/wav}
+  SynthesizeSessionlessRequest:
+    type: object
+    required:
+      - voice_name
+      - credentials
+      - text
+      - audio
+    properties:
+      credentials: {description: Учетные данные пользователя, $ref: '#/definitions/Credentials'}
+      voice_name: {description: Имя голоса, position: 1, type: string}
+      text: {description: 'Текст, который требуется озвучить', $ref: '#/definitions/SynthesizeText'}
+      audio: {description: Формат синтезированного аудио, position: 2, type: string, example: audio/wav}
+  WebSocketSynthesizeRequest:
+    type: object
+    required:
+      - voice_name
+      - text
+      - audio
+    properties:
+      voice_name: {description: WebSocketИмя голоса, position: 1, type: string}
+      text: {description: 'Текст, который требуется озвучить.', $ref: '#/definitions/WebSocketTextParam'}
+      audio: {description: 'Формат синтезированный аудиоданных. Допустимые значения: `audio/wav`', position: 2, type: string, example: audio/s16le}
+  Credentials:
+    type: object
+    required:
+      - voice_name
+      - credentials
+      - text
+      - audio
+    properties:
+      domain_id: {description: Идентификатор домена пользователя, position: 2, type: string, example: '203'}
+      password: {description: Пароль пользователя, position: 1, type: string, example: '123'}
+      username: {description: Имя пользователя, type: string, example: api_administrator}

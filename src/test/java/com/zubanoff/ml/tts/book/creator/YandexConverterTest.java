@@ -1,7 +1,7 @@
 package com.zubanoff.ml.tts.book.creator;
 
 import com.zubanoff.ml.tts.book.creator.service.BookCreatorService;
-import com.zubanoff.ml.tts.book.creator.service.converter.Converter;
+import com.zubanoff.ml.tts.book.creator.service.tts.yandex.YandexConverter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Disabled;
@@ -21,10 +21,10 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @SpringBootTest
 @Slf4j
-public class ConverterTest {
+public class YandexConverterTest {
 
     @Autowired
-    public Converter converter;
+    public YandexConverter yandexConverter;
 
     @Autowired
     public BookCreatorService bookCreatorService;

@@ -1,4 +1,4 @@
-package com.zubanoff.ml.tts.book.creator.service.converter;
+package com.zubanoff.ml.tts.book.creator.service.tts.yandex;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,13 +17,13 @@ import java.nio.file.StandardOpenOption;
 @RequiredArgsConstructor
 @Component
 @Slf4j
-public class Converter {
+public class YandexConverter {
 
     private final ApplicationContext applicationContext;
 
     public void convert(String chunkName, String text) {
         WebClient webClientWithTimeout = (WebClient) applicationContext.getBean("webClientWithTimeout");
-        ConverterRequest convertRequest = new ConverterRequest();
+        YandexConverterRequest convertRequest = new YandexConverterRequest();
         convertRequest.setText(text);
 
         Flux<DataBuffer> dataBuffer = webClientWithTimeout.post()

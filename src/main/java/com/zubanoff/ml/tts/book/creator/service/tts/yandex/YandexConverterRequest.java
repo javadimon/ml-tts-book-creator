@@ -1,4 +1,4 @@
-package com.zubanoff.ml.tts.book.creator.service.converter;
+package com.zubanoff.ml.tts.book.creator.service.tts.yandex;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 
 @Getter
 @Setter
-public class ConverterRequest {
+public class YandexConverterRequest {
     private String text = "";
     private String lang = "ru-RU";
     private String speed = "1.2";
