@@ -101,8 +101,14 @@ public class STCConverter {
     }
 
     @SneakyThrows
-    public Callable<Boolean> convert(String chunkName, String text) {
-        Callable<Boolean> callable = () -> {
+    public Callable<STCConvertResult> convert(String chunkName, String text) {
+        Callable<STCConvertResult> callable = () -> {
+
+            STCConvertResult result = new STCConvertResult();
+            result.setChunkName(chunkName);
+            result.setDescription("Ok");
+
+            long startTime = System.currentTimeMillis();
             try{
                 ByteArrayOutputStream audioBytes = new ByteArrayOutputStream();
                 UUID transactionId = UUID.randomUUID();
@@ -167,12 +173,19 @@ public class STCConverter {
 
                 log.info("File {} created", chunkName + ".np3");
                 closeSession();
-                return true;
+
+                result.setSuccess(true);
+                result.setConvertDurationInSeconds((System.currentTimeMillis() - startTime) / 1000);
+                return result;
 
             } catch (Exception ex){
                 log.error("FATAL TTS ERROR FOR {}", chunkName, ex);
                 closeSession();
-                return false;
+
+                result.setSuccess(false);
+                result.setDescription(ex.getMessage());
+                result.setConvertDurationInSeconds((System.currentTimeMillis() - startTime) / 1000);
+                return result;
             }
         };
 

@@ -3,6 +3,7 @@ package com.zubanoff.ml.tts.book.creator.service;
 import com.zubanoff.ml.tts.book.creator.dao.BookRepository;
 import com.zubanoff.ml.tts.book.creator.model.BookEntity;
 import com.zubanoff.ml.tts.book.creator.server.dto.BookCreateRequestDto;
+import com.zubanoff.ml.tts.book.creator.service.tts.stc.STCConvertResult;
 import com.zubanoff.ml.tts.book.creator.service.tts.stc.STCConverter;
 import com.zubanoff.ml.tts.book.creator.service.tts.yandex.YandexConverter;
 import lombok.RequiredArgsConstructor;
@@ -56,7 +57,7 @@ public class BookCreatorService {
         for (TreeMap<String, String> chunk : chunks) {
 
             ExecutorService executor = Executors.newFixedThreadPool(chunks.size());
-            List<Callable<Boolean>> callables = new ArrayList<>();
+            List<Callable<STCConvertResult>> callables = new ArrayList<>();
             for (Map.Entry<String, String> entry : chunk.entrySet()) {
                 totalSymbolsCount = totalSymbolsCount + entry.getValue().length();
 
@@ -68,23 +69,24 @@ public class BookCreatorService {
                 }
 
                 if(callables.size() > 49){
-                    List<Future<Boolean>> results = executor.invokeAll(callables);
+                    executor = Executors.newFixedThreadPool(callables.size());
+                    List<Future<STCConvertResult>> results = executor.invokeAll(callables);
                     executor.shutdown();
 
                     for(int i = 0; i < results.size(); i++){
-                        log.info("Result for Future number {} is success {}", i, results.get(i).get());
+                        log.info("Result for Future number {} \n{}", i, results.get(i).get());
                     }
 
-                    executor = Executors.newFixedThreadPool(chunks.size());
+                    executor = Executors.newFixedThreadPool(chunks.size() - callables.size());
                     callables = new ArrayList<>();
                 }
             }
 
-            List<Future<Boolean>> results = executor.invokeAll(callables);
+            List<Future<STCConvertResult>> results = executor.invokeAll(callables);
             executor.shutdown();
 
             for(int i = 0; i < results.size(); i++){
-                log.info("Result for Future number {} is success {}", i, results.get(i).get());
+                log.info("Result for Future number {} \n{}", i, results.get(i).get());
             }
         }
         log.info("Total symbols count {}, Price {}", totalSymbolsCount, totalSymbolsCount * COST_PER_SYMBOL);
