@@ -123,7 +123,7 @@ public class STCConverter {
                         new WebSocketAdapter() {
                             @Override
                             public void onConnected(WebSocket websocket, Map<String, List<String>> headers) throws Exception {
-                                log.info("Connected");
+                                log.info("Connected for {}", chunkName);
                                 isConnect.set(true);
                             }
 
