@@ -141,10 +141,10 @@ public class BookCreatorService {
             TreeMap<String, String> map = new TreeMap<>();
             StringBuilder chapterChunkText = new StringBuilder();
             for (String chapterLine : chapter.getValue()) {
-
                 chapterLine = chapterLine.isEmpty() ? EMPTY_LINE : chapterLine;
+                int chapterChunkLength = chapterChunkText.length() + chapterLine.length() + EMPTY_LINE.length();
 
-                if (chapterChunkText.length() + chapterLine.length() + EMPTY_LINE.length() < MAX_CHUNK_LENGTH) {
+                if (chapterChunkLength < MAX_CHUNK_LENGTH) {
                     if (chapterLine.equals(EMPTY_LINE)) {
                         chapterChunkText.append(chapterLine);
                     } else {
@@ -153,13 +153,14 @@ public class BookCreatorService {
 
                 } else {
                     map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), chapterChunkText.toString());
-                    chapterChunkText = new StringBuilder();
                     chapterSubNumber++;
-                }
-            }
 
-            if (chapterChunkText.length() > 0) {
-                map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), chapterChunkText.toString());
+                    String restChapterChunkText = (chapterChunkText + chapterLine).substring(chapterChunkText.toString().length());
+                    map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), restChapterChunkText);
+                    chapterSubNumber++;
+
+                    chapterChunkText = new StringBuilder();
+                }
             }
             chunks.add(map);
         }
