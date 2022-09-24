@@ -22,6 +22,14 @@ import org.springframework.stereotype.Component;
 
 
 import javax.annotation.PostConstruct;
+import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -35,12 +43,19 @@ public class STCConverter {
 
     private SessionApi sessionApi;
     private UUID currentSessionId;
-    private ApiResponse<WebSocketServerConfiguration> webSocketConfiguration;
+    private AudioFormat audioFormat;
 
     @PostConstruct
     public void init() {
         ApiClient apiClient = new ApiClient();
         sessionApi = new SessionApi(apiClient);
+
+        boolean bigEndian = false; // младший байт первый
+        boolean signed = true;
+        int channels = 1;
+        int sampleSizeInBits = 16;
+        float sampleRate = 22050;
+        audioFormat = new AudioFormat(sampleRate, sampleSizeInBits, channels, signed, bigEndian);
     }
 
     @SneakyThrows
@@ -83,11 +98,12 @@ public class STCConverter {
 
     @SneakyThrows
     public void convert(String chunkName, String text) {
+        ByteArrayOutputStream audioBytes = new ByteArrayOutputStream();
         UUID transactionId = UUID.randomUUID();
         SynthesizeApi synthesizeApi = new SynthesizeApi();
         WebSocketSynthesizeRequest webSocketRequest =
                 new WebSocketSynthesizeRequest(new WebSocketTextParam("text/plain"), "Vladimir_n", "audio/wav");
-        webSocketConfiguration = synthesizeApi.webSocketStreamWithHttpInfo(currentSessionId, webSocketRequest);
+        ApiResponse<WebSocketServerConfiguration> webSocketConfiguration = synthesizeApi.webSocketStreamWithHttpInfo(currentSessionId, webSocketRequest);
         webSocketConfiguration.getHeaders().put("X-Transaction-Id", List.of(transactionId.toString()));
 
         AtomicBoolean isConnect = new AtomicBoolean(false);
@@ -112,8 +128,9 @@ public class STCConverter {
 
                     @Override
                     public void onBinaryMessage(WebSocket websocket, byte[] binary) throws Exception {
+                        audioBytes.write(binary);
                         prevCurrentTime.set(currentTime.get());
-                        log.info("Message text onBinaryMessage {}", binary.length);
+//                        log.info("Message text onBinaryMessage {}", binary.length);
                     }
                 });
 
@@ -123,17 +140,39 @@ public class STCConverter {
             Thread.sleep(1);
         }
 
-        webSocketApi.sendText("Волков вздохнул, съехал на обочину и остановил коня, жестом дал знак оруженосцу с его " +
-                "штандартом и слугам, Ёгану и Сычу, ехать дальше, сам стал пропускать колону вперёд.");
+        webSocketApi.sendText(text);
         log.info("Text sent");
 
         while (isWait.get()){
             Thread.sleep(10);
             currentTime.set(System.nanoTime());
-            if(prevCurrentTime.get() != 0 && (currentTime.get() - prevCurrentTime.get()) > 100000000L){
+            if(prevCurrentTime.get() != 0 && (currentTime.get() - prevCurrentTime.get()) > 1_000_000_000L){
                 isWait.set(false);
             }
         }
-        log.info("Finish");
+
+        AudioInputStream audioInputStream = new AudioInputStream(
+                new ByteArrayInputStream(audioBytes.toByteArray()),
+                audioFormat,
+                audioBytes.toByteArray().length);
+        Path destination = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", chunkName + ".wav");
+        AudioSystem.write(audioInputStream, AudioFileFormat.Type.WAVE, destination.toFile());
+        convertToMp3(chunkName);
+        log.info("File {} created", chunkName + ".np3");
+    }
+
+    @SneakyThrows
+    private void convertToMp3(String chunkName){
+        Path ffmpegPath = Paths.get(System.getProperty("user.dir"), "ffmpeg", "bin", "ffmpeg.exe");
+        Path wavPath = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", chunkName + ".wav");
+        Path mp3Path = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", chunkName + ".mp3");
+
+        String cmd = "{ffmpegPath} -i {wavPath} -acodec libmp3lame -b:a 128k {mp3Path}";
+        cmd = cmd.replace("{ffmpegPath}", ffmpegPath.toString())
+                .replace("{wavPath}", wavPath.toString())
+                .replace("{mp3Path}", mp3Path.toString());
+
+        Process process = Runtime.getRuntime().exec(cmd);
+        process.waitFor();
     }
 }

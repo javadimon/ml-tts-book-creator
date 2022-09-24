@@ -3,6 +3,7 @@ package com.zubanoff.ml.tts.book.creator.service;
 import com.zubanoff.ml.tts.book.creator.dao.BookRepository;
 import com.zubanoff.ml.tts.book.creator.model.BookEntity;
 import com.zubanoff.ml.tts.book.creator.server.dto.BookCreateRequestDto;
+import com.zubanoff.ml.tts.book.creator.service.tts.stc.STCConverter;
 import com.zubanoff.ml.tts.book.creator.service.tts.yandex.YandexConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -31,6 +32,7 @@ import java.util.zip.ZipOutputStream;
 public class BookCreatorService {
 
     private final YandexConverter yandexConverter;
+    private final STCConverter stcConverter;
     private final BookRepository bookRepository;
     private static final String CHAPTER_SPLITTER = "глава";
     private static final String EMPTY_LINE = "\n";
@@ -40,6 +42,9 @@ public class BookCreatorService {
 
     @SneakyThrows
     public void createBook(BookCreateRequestDto bookCreateRequestDto) {
+
+        stcConverter.createSession();
+
         BookEntity bookEntity = bookRepository.findById(bookCreateRequestDto.getBookId()).orElseThrow();
         Path bookPath = Paths.get(System.getProperty("user.dir"), "books", "source", "txt", bookEntity.getFileName());
         TreeMap<Integer, List<String>> chapters = splitBookToChapters(bookPath);
@@ -51,11 +56,14 @@ public class BookCreatorService {
 
                 if(isChapterToConvert(bookCreateRequestDto, entry.getKey())){
                     log.info("Key {}, Value length {}", entry.getKey(), entry.getValue().length());
-                    yandexConverter.convert(entry.getKey(), entry.getValue());
+//                    yandexConverter.convert(entry.getKey(), entry.getValue());
+                    stcConverter.convert(entry.getKey(), entry.getValue());
                 }
             }
         }
         log.info("Total symbols count {}, Price {}", totalSymbolsCount, totalSymbolsCount * COST_PER_SYMBOL);
+
+        stcConverter.closeSession();
 
         makeZipFile(bookEntity);
     }
