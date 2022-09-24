@@ -24,17 +24,12 @@ public class STCConverterTest {
     public void convertTest() throws Exception{
         assertThat(stcConverter, notNullValue());
 
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("\n").append("\n").append("\n").append("\n");
-        String s = stringBuilder.toString();
-        log.info("isEmpty {}, isBlank {}, length {}", s.trim().isEmpty(), s.trim().isBlank(), s.trim().length());
-
-//        stcConverter.createSession();
+        stcConverter.createSession();
 //        stcConverter.checkSession();
 //        stcConverter.getLanguages();
-//        stcConverter.getVoices();
+        stcConverter.getVoices();
 //
 //        stcConverter.convert("", "");
-//        stcConverter.closeSession();
+        stcConverter.closeSession();
     }
 }

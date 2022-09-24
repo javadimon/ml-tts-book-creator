@@ -114,7 +114,7 @@ public class STCConverter {
                 UUID transactionId = UUID.randomUUID();
                 SynthesizeApi synthesizeApi = new SynthesizeApi();
                 WebSocketSynthesizeRequest webSocketRequest =
-                        new WebSocketSynthesizeRequest(new WebSocketTextParam("text/plain"), "Vladimir_n", "audio/wav");
+                        new WebSocketSynthesizeRequest(new WebSocketTextParam("text/plain"), "Petr_n", "audio/wav");
                 ApiResponse<WebSocketServerConfiguration> webSocketConfiguration = synthesizeApi.webSocketStreamWithHttpInfo(currentSessionId, webSocketRequest);
                 webSocketConfiguration.getHeaders().put("X-Transaction-Id", List.of(transactionId.toString()));
 
