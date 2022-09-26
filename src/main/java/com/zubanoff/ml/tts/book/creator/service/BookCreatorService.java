@@ -160,9 +160,13 @@ public class BookCreatorService {
                     chapterChunkText = new StringBuilder(restChapterChunkText);
                 }
             }
-            if(!map.get(map.lastKey()).trim().equals(chapterChunkText.toString().trim())){
-                chapterSubNumber++;
-                map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), chapterChunkText.toString());
+            if(chapterChunkText.toString().trim().startsWith(map.get(map.lastKey()).trim())){
+                map.replace(map.lastKey(), chapterChunkText.toString().trim());
+            } else {
+                if(!map.get(map.lastKey()).trim().equals(chapterChunkText.toString().trim())){
+                    chapterSubNumber++;
+                    map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), chapterChunkText.toString());
+                }
             }
             chunks.add(map);
         }
