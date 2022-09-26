@@ -157,10 +157,12 @@ public class BookCreatorService {
 
                     String restChapterChunkText = (chapterChunkText + chapterLine).substring(chapterChunkText.toString().length());
                     map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), restChapterChunkText);
-                    chapterSubNumber++;
-
-                    chapterChunkText = new StringBuilder();
+                    chapterChunkText = new StringBuilder(restChapterChunkText);
                 }
+            }
+            if(!map.get(map.lastKey()).trim().equals(chapterChunkText.toString().trim())){
+                chapterSubNumber++;
+                map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), chapterChunkText.toString());
             }
             chunks.add(map);
         }
