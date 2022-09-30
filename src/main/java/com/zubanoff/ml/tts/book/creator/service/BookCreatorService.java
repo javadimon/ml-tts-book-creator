@@ -40,7 +40,8 @@ public class BookCreatorService {
     private final YandexConverter yandexConverter;
     private final ApplicationContext context;
     private final BookRepository bookRepository;
-    private static final String CHAPTER_SPLITTER = "глава";
+//    private static final String CHAPTER_SPLITTER = "глава";
+    private static final String CHAPTER_SPLITTER = "* * *";
     private static final String EMPTY_LINE = "\n";
     private static final int MAX_CHUNK_LENGTH = 5000;
     private static final int CONVERT_REQUEST_DELAY_MS = 50;
@@ -160,6 +161,11 @@ public class BookCreatorService {
                     chapterChunkText = new StringBuilder(restChapterChunkText);
                 }
             }
+
+            if(map.isEmpty()){
+                map.put("Chapter " + formatChapterNumber(chapterNumber) + "-" + formatChapterNumber(chapterSubNumber), chapterChunkText.toString());
+            }
+
             if(chapterChunkText.toString().trim().startsWith(map.get(map.lastKey()).trim())){
                 map.replace(map.lastKey(), chapterChunkText.toString().trim());
             } else {
