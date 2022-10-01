@@ -55,10 +55,8 @@ public class BookCreatorService {
         TreeMap<Integer, List<String>> chapters = splitBookToChapters(bookPath);
         List<TreeMap<String, String>> chunks = splitChaptersToChunks(chapters);
         int totalSymbolsCount = 0;
+        List<Callable<STCConvertResult>> callables = new ArrayList<>();
         for (TreeMap<String, String> chunk : chunks) {
-
-            ExecutorService executor = Executors.newFixedThreadPool(chunks.size());
-            List<Callable<STCConvertResult>> callables = new ArrayList<>();
             for (Map.Entry<String, String> entry : chunk.entrySet()) {
                 totalSymbolsCount = totalSymbolsCount + entry.getValue().length();
 
@@ -68,28 +66,26 @@ public class BookCreatorService {
                     stcConverter.createSession();
                     callables.add(stcConverter.convert(entry.getKey(), entry.getValue()));
                 }
-
-                if(callables.size() > 49){
-                    executor = Executors.newFixedThreadPool(callables.size());
-                    List<Future<STCConvertResult>> results = executor.invokeAll(callables);
-                    executor.shutdown();
-
-                    for(int i = 0; i < results.size(); i++){
-                        log.info("Result for Future number {} \n{}", i, results.get(i).get());
-                    }
-
-                    executor = Executors.newFixedThreadPool(chunks.size() - callables.size());
-                    callables = new ArrayList<>();
-                }
-            }
-
-            List<Future<STCConvertResult>> results = executor.invokeAll(callables);
-            executor.shutdown();
-
-            for(int i = 0; i < results.size(); i++){
-                log.info("Result for Future number {} \n{}", i, results.get(i).get());
             }
         }
+
+        for(int fromIndex = 0; fromIndex < callables.size(); fromIndex = fromIndex + 50) {
+            int toIndex = (fromIndex + 50) - 1;
+            if (toIndex >= callables.size()) {
+                toIndex = ((callables.size() - fromIndex) + fromIndex) - 1;
+            }
+            log.info("Callables fromIndex {}, toIndex {}", fromIndex, toIndex);
+
+            List<Callable<STCConvertResult>> callablesChunk = callables.subList(fromIndex, toIndex);
+            ExecutorService executor = Executors.newFixedThreadPool(callablesChunk.size());
+            List<Future<STCConvertResult>> results = executor.invokeAll(callablesChunk);
+            executor.shutdown();
+
+            for(Future<STCConvertResult> r : results){
+                log.info("Result for Future Chunk name: {}, Success: {}", r.get().getChunkName(), r.get().isSuccess());
+            }
+        }
+
         log.info("Total symbols count {}, Price {}", totalSymbolsCount, totalSymbolsCount * COST_PER_SYMBOL);
 
         makeZipFile(bookEntity);
