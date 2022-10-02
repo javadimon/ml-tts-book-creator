@@ -63,6 +63,10 @@ public class BookCreatorService {
                 if (isChapterToConvert(bookCreateRequestDto, entry.getKey())) {
                     log.info("Key {}, Value length {}", entry.getKey(), entry.getValue().length());
                     STCConverter stcConverter = context.getBean(STCConverter.class);
+                    if(Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", entry.getKey() + ".mp3").toFile().exists()){
+                        log.info("File {} already exists", entry.getKey() + ".mp3");
+                        continue;
+                    }
                     stcConverter.createSession();
                     callables.add(stcConverter.convert(entry.getKey(), entry.getValue()));
                 }
