@@ -40,8 +40,8 @@ public class BookCreatorService {
     private final YandexConverter yandexConverter;
     private final ApplicationContext context;
     private final BookRepository bookRepository;
-//    private static final String CHAPTER_SPLITTER = "глава";
-    private static final String CHAPTER_SPLITTER = "* * *";
+    private static final String CHAPTER_SPLITTER = "глава";
+//    private static final String CHAPTER_SPLITTER = "* * *";
     private static final String EMPTY_LINE = "\n";
     private static final int MAX_CHUNK_LENGTH = 5000;
     private static final int CONVERT_REQUEST_DELAY_MS = 50;
@@ -69,30 +69,29 @@ public class BookCreatorService {
                     }
                     stcConverter.createSession();
                     callables.add(stcConverter.convert(entry.getKey(), entry.getValue()));
+
+                    if(callables.size() > 49){
+                        convertInMultiThreads(callables);
+                    }
                 }
             }
         }
-
-        for(int fromIndex = 0; fromIndex < callables.size(); fromIndex = fromIndex + 50) {
-            int toIndex = (fromIndex + 50) - 1;
-            if (toIndex >= callables.size()) {
-                toIndex = ((callables.size() - fromIndex) + fromIndex) - 1;
-            }
-            log.info("Callables fromIndex {}, toIndex {}", fromIndex, toIndex);
-
-            List<Callable<STCConvertResult>> callablesChunk = callables.subList(fromIndex, toIndex);
-            ExecutorService executor = Executors.newFixedThreadPool(callablesChunk.size());
-            List<Future<STCConvertResult>> results = executor.invokeAll(callablesChunk);
-            executor.shutdown();
-
-            for(Future<STCConvertResult> r : results){
-                log.info("Result for Future Chunk name: {}, Success: {}", r.get().getChunkName(), r.get().isSuccess());
-            }
-        }
-
+        convertInMultiThreads(callables);
         log.info("Total symbols count {}, Price {}", totalSymbolsCount, totalSymbolsCount * COST_PER_SYMBOL);
 
         makeZipFile(bookEntity);
+    }
+
+    @SneakyThrows
+    private void convertInMultiThreads(List<Callable<STCConvertResult>> callables){
+        ExecutorService executor = Executors.newFixedThreadPool(callables.size());
+        List<Future<STCConvertResult>> results = executor.invokeAll(callables);
+        executor.shutdown();
+
+        for(Future<STCConvertResult> r : results){
+            log.info("Result for Future Chunk name: {}, Success: {}", r.get().getChunkName(), r.get().isSuccess());
+        }
+        callables.clear();
     }
 
     private boolean isChapterToConvert(BookCreateRequestDto bookCreateRequestDto, String chapterName) {

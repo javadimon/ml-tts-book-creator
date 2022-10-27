@@ -4,6 +4,10 @@ import com.neovisionaries.ws.client.*;
 import com.speechpro.cloud.client.ApiResponse;
 import com.speechpro.cloud.client.model.WebSocketServerConfiguration;
 
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.util.UUID;
 
@@ -21,12 +25,36 @@ public class WebSocketApi {
 
     private WebSocketAdapter wsAdapter;
 
+    TrustManager[] trustAllCerts = new TrustManager[]{
+            new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                }
+
+                @Override
+                public void checkServerTrusted(java.security.cert.X509Certificate[] chain, String authType) {
+                }
+
+                @Override
+                public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+                    return new java.security.cert.X509Certificate[]{};
+                }
+            }
+    };
+
     public WebSocketApi(String webSocketAddress, int timeout, WebSocketAdapter adapter) {
         WebSocketFactory factory = new WebSocketFactory();
         factory.setVerifyHostname(false);
         try {
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+
+            factory.setSSLSocketFactory(sslContext.getSocketFactory());
+            factory.setVerifyHostname(false);
+            //httpClient.setHostnameVerifier((hostname, session) -> true);
+
             ws = factory.createSocket(webSocketAddress, timeout);
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         wsAdapter = adapter;
