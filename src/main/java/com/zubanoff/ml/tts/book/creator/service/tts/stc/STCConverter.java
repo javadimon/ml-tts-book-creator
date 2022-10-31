@@ -142,7 +142,6 @@ public class STCConverter {
                             public void onBinaryMessage(WebSocket websocket, byte[] binary) throws Exception {
                                 audioBytes.write(binary);
                                 prevCurrentTime.set(currentTime.get());
-//                        log.info("Message text onBinaryMessage {}", binary.length);
                             }
                         });
 
@@ -158,7 +157,7 @@ public class STCConverter {
                 while (isWait.get()){
                     Thread.sleep(10);
                     currentTime.set(System.nanoTime());
-                    if(prevCurrentTime.get() != 0 && (currentTime.get() - prevCurrentTime.get()) > 1_000_000_000L){
+                    if(prevCurrentTime.get() != 0 && (currentTime.get() - prevCurrentTime.get()) > 5_000_000_000L){
                         isWait.set(false);
                     }
                 }
