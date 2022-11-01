@@ -48,6 +48,7 @@ public class STCConverter {
     private SessionApi sessionApi;
     private UUID currentSessionId;
     private AudioFormat audioFormat;
+    private static final Object lock = new Object();
 
     @PostConstruct
     public void init() {
@@ -102,6 +103,7 @@ public class STCConverter {
 
     @SneakyThrows
     public Callable<STCConvertResult> convert(String chunkName, String text) {
+
         Callable<STCConvertResult> callable = () -> {
 
             STCConvertResult result = new STCConvertResult();
@@ -109,7 +111,7 @@ public class STCConverter {
             result.setDescription("Ok");
 
             long startTime = System.currentTimeMillis();
-            try{
+            try {
                 ByteArrayOutputStream audioBytes = new ByteArrayOutputStream();
                 UUID transactionId = UUID.randomUUID();
                 SynthesizeApi synthesizeApi = new SynthesizeApi();
@@ -147,17 +149,22 @@ public class STCConverter {
 
                 webSocketApi.connect();
 
-                while(!isConnect.get()){
+                while (!isConnect.get()) {
                     Thread.sleep(1);
                 }
 
                 webSocketApi.sendText(text);
                 log.info("Text for chunk {} sent", chunkName);
 
-                while (isWait.get()){
-                    Thread.sleep(10);
-                    currentTime.set(System.nanoTime());
-                    if(prevCurrentTime.get() != 0 && (currentTime.get() - prevCurrentTime.get()) > 5_000_000_000L){
+                while (isWait.get()) {
+                    try {
+                        Thread.sleep(10);
+                        currentTime.set(System.nanoTime());
+                        if (prevCurrentTime.get() != 0 && (currentTime.get() - prevCurrentTime.get()) > 5_000_000_000L) {
+                            isWait.set(false);
+                        }
+                    } catch (Exception ex) {
+                        log.error("FATAL ERROR CONVERTER!!!", ex);
                         isWait.set(false);
                     }
                 }
@@ -177,7 +184,7 @@ public class STCConverter {
                 result.setConvertDurationInSeconds((System.currentTimeMillis() - startTime) / 1000);
                 return result;
 
-            } catch (Exception ex){
+            } catch (Exception ex) {
                 log.error("FATAL TTS ERROR FOR {}", chunkName, ex);
                 closeSession();
 
@@ -192,7 +199,7 @@ public class STCConverter {
     }
 
     @SneakyThrows
-    private void convertToMp3(String chunkName){
+    private void convertToMp3(String chunkName) {
 
         Path ffmpegPath = Paths.get(System.getProperty("user.dir"), "ffmpeg", "bin", "ffmpeg.exe");
         Path wavPath = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", chunkName + ".wav");

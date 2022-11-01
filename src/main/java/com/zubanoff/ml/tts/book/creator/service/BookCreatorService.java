@@ -107,6 +107,8 @@ public class BookCreatorService {
 
     @SneakyThrows
     private void makeZipFile(BookEntity bookEntity) {
+        log.info("Try ZIP file create ...");
+
         Path srcFilesPath = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3");
         File[] srcFiles = srcFilesPath.toFile().listFiles();
 
