@@ -16,6 +16,7 @@ import com.speechpro.cloud.client.model.SynthesizeVoiceType;
 import com.speechpro.cloud.client.model.WebSocketServerConfiguration;
 import com.speechpro.cloud.client.model.WebSocketSynthesizeRequest;
 import com.speechpro.cloud.client.model.WebSocketTextParam;
+import com.zubanoff.ml.tts.book.creator.Application;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
@@ -48,7 +49,6 @@ public class STCConverter {
     private SessionApi sessionApi;
     private UUID currentSessionId;
     private AudioFormat audioFormat;
-    private static final Object lock = new Object();
 
     @PostConstruct
     public void init() {
@@ -200,23 +200,24 @@ public class STCConverter {
 
     @SneakyThrows
     private void convertToMp3(String chunkName) {
+        synchronized (Application.lock){
+            Path ffmpegPath = Paths.get(System.getProperty("user.dir"), "ffmpeg", "bin", "ffmpeg.exe");
+            Path wavPath = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", chunkName + ".wav");
+            Path mp3Path = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", chunkName + ".mp3");
 
-        Path ffmpegPath = Paths.get(System.getProperty("user.dir"), "ffmpeg", "bin", "ffmpeg.exe");
-        Path wavPath = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", chunkName + ".wav");
-        Path mp3Path = Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", chunkName + ".mp3");
+            log.info("Try convert {} to mp3", chunkName);
+            String cmd = "{ffmpegPath} -y -i \"{wavPath}\" -acodec libmp3lame -b:a 128k \"{mp3Path}\"";
+            cmd = cmd.replace("{ffmpegPath}", ffmpegPath.toString())
+                    .replace("{wavPath}", wavPath.toString())
+                    .replace("{mp3Path}", mp3Path.toString());
+            log.info("DEBUG ffmpeg cmd {}", cmd);
 
-        log.info("Try convert {} to mp3", chunkName);
-        String cmd = "{ffmpegPath} -y -i \"{wavPath}\" -acodec libmp3lame -b:a 128k \"{mp3Path}\"";
-        cmd = cmd.replace("{ffmpegPath}", ffmpegPath.toString())
-                .replace("{wavPath}", wavPath.toString())
-                .replace("{mp3Path}", mp3Path.toString());
-        log.info("DEBUG ffmpeg cmd {}", cmd);
+            Process process = Runtime.getRuntime().exec(cmd);
+            process.waitFor();
+            log.info("Converted {} success!", chunkName);
 
-        Process process = Runtime.getRuntime().exec(cmd);
-        process.waitFor();
-        log.info("Converted {} success!", chunkName);
-
-        boolean isDeleted = wavPath.toFile().delete();
-        log.info("Result for deleted {} is {}", wavPath, isDeleted);
+            boolean isDeleted = wavPath.toFile().delete();
+            log.info("Result for deleted {} is {}", wavPath, isDeleted);
+        }
     }
 }

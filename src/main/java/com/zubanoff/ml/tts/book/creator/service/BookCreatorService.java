@@ -70,7 +70,7 @@ public class BookCreatorService {
                     stcConverter.createSession();
                     callables.add(stcConverter.convert(entry.getKey(), entry.getValue()));
 
-                    if(callables.size() > 49){
+                    if(callables.size() == 10){
                         convertInMultiThreads(callables);
                     }
                 }
