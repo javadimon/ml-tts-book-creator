@@ -76,7 +76,9 @@ public class BookCreatorService {
                 }
             }
         }
-        convertInMultiThreads(callables);
+        if(!callables.isEmpty()){
+            convertInMultiThreads(callables);
+        }
         log.info("Total symbols count {}, Price {}", totalSymbolsCount, totalSymbolsCount * COST_PER_SYMBOL);
 
         makeZipFile(bookEntity);
