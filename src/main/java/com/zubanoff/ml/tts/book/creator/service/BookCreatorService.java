@@ -185,7 +185,7 @@ public class BookCreatorService {
 
     private String formatChapterNumber(int chapterNumber) {
         if (chapterNumber < 100) {
-            return chapterNumber < 10 ? "00" + chapterNumber : "0" + String.valueOf(chapterNumber);
+            return chapterNumber < 10 ? "00" + chapterNumber : "0" + chapterNumber;
         } else {
             return String.valueOf(chapterNumber);
         }
