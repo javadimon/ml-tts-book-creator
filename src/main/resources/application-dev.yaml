@@ -16,5 +16,8 @@ spring:
   liquibase:
     change-log: classpath:liquibase/db-changelog.xml
 
+server:
+  port: 9090
+
 vaadin:
   urlMapping: /app/*
