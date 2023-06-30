@@ -62,25 +62,25 @@ public class BookCreatorService {
                 if (isChapterToConvert(bookCreateRequestDto, entry.getKey())) {
                     log.info("Key {}, Value length {}", entry.getKey(), entry.getValue().length());
 
-//                    yandexConverter.convert(entry.getKey(), entry.getValue());
+                    yandexConverter.convert(entry.getKey(), entry.getValue());
 
-                    STCConverter stcConverter = context.getBean(STCConverter.class);
-                    if(Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", entry.getKey() + ".mp3").toFile().exists()){
-                        log.info("File {} already exists", entry.getKey() + ".mp3");
-                        continue;
-                    }
-                    stcConverter.createSession();
-                    callables.add(stcConverter.convert(entry.getKey(), entry.getValue()));
-
-                    if(callables.size() == 10){
-                        convertInMultiThreads(callables);
-                    }
+//                    STCConverter stcConverter = context.getBean(STCConverter.class);
+//                    if(Paths.get(System.getProperty("user.dir"), "books", "out", "mp3", entry.getKey() + ".mp3").toFile().exists()){
+//                        log.info("File {} already exists", entry.getKey() + ".mp3");
+//                        continue;
+//                    }
+//                    stcConverter.createSession();
+//                    callables.add(stcConverter.convert(entry.getKey(), entry.getValue()));
+//
+//                    if(callables.size() == 10){
+//                        convertInMultiThreads(callables);
+//                    }
                 }
             }
         }
-        if(!callables.isEmpty()){
-            convertInMultiThreads(callables);
-        }
+//        if(!callables.isEmpty()){
+//            convertInMultiThreads(callables);
+//        }
 //        log.info("Total symbols count {}, Price {}", totalSymbolsCount, totalSymbolsCount * COST_PER_SYMBOL);
 
         makeZipFile(bookEntity);
